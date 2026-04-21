@@ -1,26 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --paper: #faf8f4;
+  --paper-warm: #f3eee6;
+  --linen: #e8e0d5;
+  --ink: #2c2c2c;
+  --ink-muted: #5a5348;
+  --accent: #8b7355;
+  --secondary: #c9b99a;
+  --rose-dust: #9a7a6a;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-paper: var(--paper);
+  --color-paper-warm: var(--paper-warm);
+  --color-linen: var(--linen);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-accent: var(--accent);
+  --color-secondary: var(--secondary);
+  --color-sage: var(--accent);
+  --color-sage-muted: var(--secondary);
+  --color-sage-deep: var(--accent);
+  --color-rose-dust: var(--rose-dust);
+  --font-serif: var(--font-playfair), ui-serif, Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--paper);
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+::selection {
+  background: color-mix(in srgb, var(--secondary) 45%, transparent);
+}
+
+/* Katalog-knap: outline med accent */
+.btn-outline {
+  @apply inline-flex items-center justify-center border border-accent bg-transparent px-5 py-2.5 text-xs font-medium uppercase tracking-[0.15em] text-accent transition hover:bg-accent/10;
+}
+
+.btn-outline-dark {
+  @apply inline-flex items-center justify-center border border-ink bg-transparent px-5 py-2.5 text-xs font-medium uppercase tracking-[0.15em] text-ink transition hover:bg-ink/5;
+}
+
+.section-rule {
+  @apply border-t border-secondary/50;
 }

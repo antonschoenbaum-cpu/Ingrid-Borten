@@ -1,0 +1,26 @@
+[
+  {
+    "id": "evt-vaar-udstilling",
+    "title": "Forårsudstilling — Atelierfællesskab",
+    "date": "2026-05-14",
+    "location": "Oslo, Norge (atelier)",
+    "description": "Fælles udstilling med nye malerier og udvalgte smykker. Åbningstider efter aftale — skriv gerne på forhånd.",
+    "image": "https://picsum.photos/seed/ingrid-evt-1/800/480"
+  },
+  {
+    "id": "evt-marked",
+    "title": "Kunsthåndværksmarked",
+    "date": "2026-06-06",
+    "location": "Bergen, Norge",
+    "description": "Stand med øreringe og små formater. Kom forbi til en snak om processen bag værkerne.",
+    "image": null
+  },
+  {
+    "id": "evt-tidligere-galleri",
+    "title": "Soloudstilling — «Nordlig ro»",
+    "date": "2024-09-01",
+    "location": "Trondheim, Norge",
+    "description": "Serie af oliemalerier inspireret af kystlandskab og vejrskifte.",
+    "image": "https://picsum.photos/seed/ingrid-evt-2/800/480"
+  }
+]

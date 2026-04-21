@@ -1,0 +1,34 @@
+[
+  {
+    "id": "oreringe-bark",
+    "title": "Øreringe «Bark»",
+    "price": 890,
+    "image": "https://picsum.photos/seed/ingrid-smy-1/600/600",
+    "description": "Håndformet tekstur inspireret af træbark og nordisk skovbund. Lette at bære, men med tydelig håndværkskarakter. Sterling sølv.",
+    "createdAt": "2025-10-10"
+  },
+  {
+    "id": "oreringe-dusk",
+    "title": "Øreringe «Skumring»",
+    "price": 750,
+    "image": "https://picsum.photos/seed/ingrid-smy-2/600/600",
+    "description": "Organiske former i varm patina med diskrete reflekser. Hvert par er unikt med små variationer fra håndværket.",
+    "createdAt": "2025-10-01"
+  },
+  {
+    "id": "oreringe-lin",
+    "title": "Øreringe «Lin»",
+    "price": 680,
+    "image": "https://picsum.photos/seed/ingrid-smy-3/600/600",
+    "description": "Stramme linjer møder bløde overgange — en hyldest til hør og håndspunnet garn. Egnet til hverdagsbrug.",
+    "createdAt": "2025-09-05"
+  },
+  {
+    "id": "oreringe-stenrose",
+    "title": "Øreringe «Stenrose»",
+    "price": 920,
+    "image": "https://picsum.photos/seed/ingrid-smy-4/600/600",
+    "description": "Små skulpturelle plader med støvet rosa glasur og mat sølv. Statement uden at dominere ansigtet.",
+    "createdAt": "2025-07-12"
+  }
+]

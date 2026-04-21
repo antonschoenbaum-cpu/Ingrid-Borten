@@ -1,0 +1,21 @@
+{
+  "biography": "Ingrid Simmenæs Borten er en norsk kunstner med hjertet forankret i naturens former og farver. Med pensel og hånd skaber hun både ekspressive malerier og håndlavede smykker, der bærer spor af nordisk natur og menneskelige fortællinger. Hendes arbejde spænder fra farverige oliebaserede lærreder til delikate øreringe, der er formede som små skulpturer. Ingrid udstiller løbende og modtager gerne henvendelser fra gallerier og privatpersoner.",
+  "artistPhoto": "/uploads/artist-placeholder.svg",
+  "cvEntries": [
+    {
+      "id": "cv-1",
+      "year": "2024",
+      "text": "Soloudstilling «Nordlig ro», Galleri Eksempel, Trondheim"
+    },
+    {
+      "id": "cv-2",
+      "year": "2023",
+      "text": "Gruppeudstilling «Hånd og farve», Kunstforeningen Eksempel"
+    },
+    {
+      "id": "cv-3",
+      "year": "2022",
+      "text": "Deltagelse i regionalt kunsthåndværksmarked"
+    }
+  ]
+}

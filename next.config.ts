@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async redirects() {
+    return [{ source: "/ingrid-borten", destination: "/om", permanent: true }];
+  },
 };
 
 export default nextConfig;
