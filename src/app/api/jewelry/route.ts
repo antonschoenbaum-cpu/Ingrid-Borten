@@ -1,3 +1,7 @@
+/**
+ * Supabase (manuel SQL i editor):
+ * -- ALTER TABLE jewelry ADD COLUMN sold boolean DEFAULT false;
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { slugIdFromTitle } from "@/lib/ids";
@@ -45,6 +49,8 @@ export async function POST(req: NextRequest) {
     id = `${id}-x`;
   }
 
+  const sold = typeof body.sold === "boolean" ? body.sold : false;
+
   const jewelry: Jewelry = {
     id,
     title,
@@ -52,6 +58,7 @@ export async function POST(req: NextRequest) {
     image,
     price,
     createdAt,
+    sold,
   };
   items.push(jewelry);
   await writeJewelry(items);

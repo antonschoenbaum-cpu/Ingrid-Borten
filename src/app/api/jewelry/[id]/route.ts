@@ -1,3 +1,7 @@
+/**
+ * Supabase (manuel SQL i editor):
+ * -- ALTER TABLE jewelry ADD COLUMN sold boolean DEFAULT false;
+ */
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/require-admin";
@@ -36,6 +40,8 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     body.price !== undefined ? Number(body.price) : items[idx].price;
   const createdAt =
     typeof body.createdAt === "string" ? body.createdAt : items[idx].createdAt;
+  const sold =
+    typeof body.sold === "boolean" ? body.sold : (items[idx].sold ?? false);
 
   if (!title) {
     return NextResponse.json({ error: "Titel påkrævet" }, { status: 400 });
@@ -54,6 +60,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     image,
     price,
     createdAt,
+    sold,
   };
   items[idx] = updated;
   await writeJewelry(items);

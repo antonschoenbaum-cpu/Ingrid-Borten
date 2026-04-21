@@ -5,7 +5,8 @@
     "price": 4200,
     "image": "https://picsum.photos/seed/ingrid-mal-1/640/800",
     "description": "Et stille øjeblik mellem skygge og lys, malet i lag af varme jordtoner og kølig dis. Værket er inspireret af nordisk højland og den bløde overgang mellem sæsoner.",
-    "createdAt": "2025-11-01"
+    "createdAt": "2025-11-01",
+    "sold": false
   },
   {
     "id": "linen-stille",
@@ -13,7 +14,8 @@
     "price": 3800,
     "image": "https://picsum.photos/seed/ingrid-mal-2/640/900",
     "description": "Abstrakte former der minder om foldet tekstil og sandede strande. Olien er arbejdet frem med hånd og penselstrøg der bærer spor af tid og tålmodighed.",
-    "createdAt": "2025-09-15"
+    "createdAt": "2025-09-15",
+    "sold": false
   },
   {
     "id": "sage-dans",
@@ -21,7 +23,8 @@
     "price": 5100,
     "image": "https://picsum.photos/seed/ingrid-mal-3/640/720",
     "description": "Bevægelse og ro i samme flade — grønne nuancer møder støvet rosa og dyb kul. Et maleri der inviterer til langsom betragtning.",
-    "createdAt": "2025-08-20"
+    "createdAt": "2025-08-20",
+    "sold": false
   },
   {
     "id": "vinterrose",
@@ -29,6 +32,7 @@
     "price": 2900,
     "image": "https://picsum.photos/seed/ingrid-mal-4/640/640",
     "description": "Et mindre lærred med intens farve og en næsten skulpturel overflade. Passer godt i mindre rum eller som del af en vægkomposition.",
-    "createdAt": "2025-06-01"
+    "createdAt": "2025-06-01",
+    "sold": false
   }
 ]

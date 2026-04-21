@@ -5,6 +5,7 @@ type Item = {
   title: string;
   price: number;
   image: string;
+  sold?: boolean;
 };
 
 type Props = {

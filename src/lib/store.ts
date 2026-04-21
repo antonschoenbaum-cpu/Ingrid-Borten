@@ -20,7 +20,8 @@ async function writeJson(file: string, data: unknown) {
 }
 
 export async function readPaintings(): Promise<Painting[]> {
-  return readJson<Painting[]>("paintings.json");
+  const raw = await readJson<Array<Painting & { sold?: boolean }>>("paintings.json");
+  return raw.map((p) => ({ ...p, sold: p.sold === true }));
 }
 
 export async function writePaintings(items: Painting[]) {
@@ -28,7 +29,8 @@ export async function writePaintings(items: Painting[]) {
 }
 
 export async function readJewelry(): Promise<Jewelry[]> {
-  return readJson<Jewelry[]>("jewelry.json");
+  const raw = await readJson<Array<Jewelry & { sold?: boolean }>>("jewelry.json");
+  return raw.map((p) => ({ ...p, sold: p.sold === true }));
 }
 
 export async function writeJewelry(items: Jewelry[]) {

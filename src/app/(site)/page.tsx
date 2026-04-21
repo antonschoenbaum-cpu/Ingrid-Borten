@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArtworkImage } from "@/components/artwork-image";
-import { formatEventDate, formatPriceDKK, isEventPast } from "@/lib/format";
+import { SoldPrice } from "@/components/SoldPrice";
+import { formatEventDate, isEventPast } from "@/lib/format";
 import { getEvents, getJewelry, getPaintings } from "@/lib/data";
 
 export default async function HomePage() {
@@ -73,8 +74,8 @@ export default async function HomePage() {
                   />
                   <div className="border-t border-secondary/40 px-4 py-4">
                     <h3 className="font-serif text-lg">{p.title}</h3>
-                    <p className="mt-1 font-serif text-lg text-accent">
-                      {formatPriceDKK(p.price)}
+                    <p className="mt-1">
+                      <SoldPrice price={p.price} sold={p.sold} size="card" />
                     </p>
                   </div>
                 </div>
@@ -105,8 +106,8 @@ export default async function HomePage() {
                   />
                   <div className="border-t border-secondary/40 px-4 py-4">
                     <h3 className="font-serif text-lg">{j.title}</h3>
-                    <p className="mt-1 font-serif text-lg text-accent">
-                      {formatPriceDKK(j.price)}
+                    <p className="mt-1">
+                      <SoldPrice price={j.price} sold={j.sold} size="card" />
                     </p>
                   </div>
                 </div>

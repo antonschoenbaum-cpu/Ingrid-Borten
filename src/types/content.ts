@@ -5,6 +5,8 @@ export type Painting = {
   image: string;
   description: string;
   createdAt: string;
+  /** Om værket er solgt (JSON; ved Supabase-brug: boolean-kolonne `sold`). */
+  sold: boolean;
 };
 
 export type Jewelry = {
@@ -14,6 +16,7 @@ export type Jewelry = {
   image: string;
   description: string;
   createdAt: string;
+  sold: boolean;
 };
 
 export type EventItem = {

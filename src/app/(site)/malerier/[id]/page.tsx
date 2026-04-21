@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArtworkImage } from "@/components/artwork-image";
-import { formatPriceDKK } from "@/lib/format";
+import { SoldPrice } from "@/components/SoldPrice";
 import { getPaintings } from "@/lib/data";
 
 type Props = { params: Promise<{ id: string }> };
@@ -42,8 +42,8 @@ export default async function MaleriDetailPage({ params }: Props) {
         </div>
         <div>
           <h1 className="font-serif text-3xl text-ink md:text-4xl">{item.title}</h1>
-          <p className="section-rule mt-6 border-secondary/40 pt-6 font-serif text-2xl text-accent">
-            {formatPriceDKK(item.price)}
+          <p className="section-rule mt-6 border-secondary/40 pt-6">
+            <SoldPrice price={item.price} sold={item.sold} size="detail" />
           </p>
           <p className="section-rule mt-8 border-secondary/40 pt-8 whitespace-pre-wrap leading-relaxed text-ink-muted">
             {item.description}

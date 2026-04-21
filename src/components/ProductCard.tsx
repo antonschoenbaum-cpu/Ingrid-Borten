@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { ArtworkImage } from "@/components/artwork-image";
-import { formatPriceDKK } from "@/lib/format";
+import { SoldPrice } from "@/components/SoldPrice";
 
 type Item = {
   id: string;
   title: string;
   price: number;
   image: string;
+  sold?: boolean;
 };
 
 type Props = {
@@ -27,7 +28,9 @@ export function ProductCard({ item, href }: Props) {
         </div>
         <div className="section-rule px-4 py-4">
           <h2 className="font-serif text-lg text-ink">{item.title}</h2>
-          <p className="mt-2 font-serif text-lg text-accent">{formatPriceDKK(item.price)}</p>
+          <p className="mt-2">
+            <SoldPrice price={item.price} sold={item.sold} size="card" />
+          </p>
         </div>
       </article>
     </Link>
