@@ -5,7 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArtworkImage } from "@/components/artwork-image";
 import { UploadForm } from "@/components/UploadForm";
 import { formatPriceDKK } from "@/lib/format";
@@ -74,12 +74,20 @@ function FormFields({
 export function PaintingsAdmin({ initial }: Props) {
   const router = useRouter();
   const items = initial;
+  const sortedItems = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(empty);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2800);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   function startEdit(p: Painting) {
     setEditingId(p.id);
@@ -108,8 +116,6 @@ export function PaintingsAdmin({ initial }: Props) {
   function cancelForm() {
     setEditingId(null);
     setForm(empty);
-    setMsg(null);
-    setErr(null);
   }
 
   async function toggleSold(p: Painting, sold: boolean) {
@@ -174,7 +180,10 @@ export function PaintingsAdmin({ initial }: Props) {
       return;
     }
     setMsg(isNew ? "Maleri oprettet." : "Maleri opdateret.");
-    cancelForm();
+    setToast(isNew ? "Succes: Nyt maleri er oprettet." : "Succes: Maleri er opdateret.");
+    setEditingId(null);
+    setForm(empty);
+    setErr(null);
     router.refresh();
   }
 
@@ -229,8 +238,14 @@ export function PaintingsAdmin({ initial }: Props) {
         </div>
       ) : null}
 
+      {toast ? (
+        <div className="fixed right-4 top-20 z-50 rounded border border-accent/40 bg-paper px-4 py-3 text-sm text-ink shadow-md">
+          {toast}
+        </div>
+      ) : null}
+
       <ul className="space-y-6">
-        {items.map((p) => (
+        {sortedItems.map((p) => (
           <li key={p.id} className="section-rule pt-6 first:border-0 first:pt-0">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="h-28 w-40 shrink-0 overflow-hidden border border-secondary/50 bg-paper-warm">
