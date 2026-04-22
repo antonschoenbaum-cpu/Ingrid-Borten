@@ -7,7 +7,7 @@ import { LogIn, Menu, X } from "lucide-react";
 
 const nav = [
   { href: "/", label: "Hjem" },
-  { href: "/om", label: "Om" },
+  { href: "/om", label: "Om Ingrid" },
   { href: "/malerier", label: "Malerier" },
   { href: "/smykker", label: "Smykker" },
   { href: "/begivenheder", label: "Begivenheder" },

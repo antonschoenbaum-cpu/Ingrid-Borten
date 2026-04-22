@@ -4,14 +4,39 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ArtworkImage } from "@/components/artwork-image";
 import { UploadForm } from "@/components/UploadForm";
-import { formatEventDate } from "@/lib/format";
+import {
+  formatEventOpensDanish,
+  formatEventUntilDanish,
+} from "@/lib/format";
 import type { EventItem } from "@/types/content";
 
 type Props = {
   initial: EventItem[];
 };
 
-const empty = { title: "", description: "", date: "", location: "", image: "" };
+function todayYmdCopenhagen(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Copenhagen" });
+}
+
+function defaultNewStart(): string {
+  return `${todayYmdCopenhagen()}T18:00`;
+}
+
+function toDatetimeLocalInput(isoLike: string): string {
+  const s = isoLike.trim();
+  const m = s.match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}):(\d{2})/);
+  if (m) return `${m[1]}T${m[2]}:${m[3]}`;
+  return `${s.slice(0, 10)}T12:00`;
+}
+
+const empty = {
+  title: "",
+  description: "",
+  start_datetime: "",
+  end_date: "",
+  location: "",
+  image: "",
+};
 
 export function EventsAdmin({ initial }: Props) {
   const router = useRouter();
@@ -27,7 +52,8 @@ export function EventsAdmin({ initial }: Props) {
     setForm({
       title: e.title,
       description: e.description,
-      date: e.date.length >= 10 ? e.date.slice(0, 10) : e.date,
+      start_datetime: toDatetimeLocalInput(e.start_date),
+      end_date: e.end_date.slice(0, 10),
       location: e.location,
       image: e.image ?? "",
     });
@@ -39,7 +65,8 @@ export function EventsAdmin({ initial }: Props) {
     setEditingId("new");
     setForm({
       ...empty,
-      date: new Date().toISOString().slice(0, 10),
+      start_datetime: defaultNewStart(),
+      end_date: todayYmdCopenhagen(),
     });
     setMsg(null);
     setErr(null);
@@ -55,16 +82,23 @@ export function EventsAdmin({ initial }: Props) {
   async function save() {
     setErr(null);
     setMsg(null);
+    const startTrim = form.start_datetime.trim();
+    const endTrim = form.end_date.trim().slice(0, 10);
     const imageTrim = form.image.trim();
     const body = {
       title: form.title.trim(),
       description: form.description,
-      date: form.date.trim(),
+      start_date: startTrim.length === 16 ? `${startTrim}:00` : startTrim,
+      end_date: endTrim,
       location: form.location.trim(),
       image: imageTrim === "" ? null : imageTrim,
     };
-    if (!body.title || !body.date || !body.location) {
-      setErr("Titel, dato og sted er påkrævet.");
+    if (!body.title || !body.location || !startTrim || !endTrim) {
+      setErr("Titel, startdato med tid, slutdato og sted er påkrævet.");
+      return;
+    }
+    if (endTrim < startTrim.slice(0, 10)) {
+      setErr("Slutdato kan ikke være før startdato.");
       return;
     }
 
@@ -100,11 +134,19 @@ export function EventsAdmin({ initial }: Props) {
 
   return (
     <div className="space-y-10">
-      <div>
-        <h1 className="font-serif text-3xl text-ink">Begivenheder</h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          Valgfrit billede gemmes under <code className="text-xs">/public/uploads/events/</code>.
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="font-serif text-3xl text-ink">Begivenheder</h1>
+          <p className="mt-2 text-sm text-ink-muted">
+            Valgfrit billede gemmes under <code className="text-xs">/public/uploads/events/</code>.
+            Udstillinger på den offentlige «Om»-side hentes automatisk fra afsluttede begivenheder.
+          </p>
+        </div>
+        {!editingId ? (
+          <button type="button" onClick={startNew} className="btn-outline shrink-0">
+            Tilføj ny begivenhed
+          </button>
+        ) : null}
       </div>
 
       <ul className="space-y-6">
@@ -124,10 +166,9 @@ export function EventsAdmin({ initial }: Props) {
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="font-serif text-lg text-ink">{e.title}</h2>
-              <p className="mt-1 text-xs uppercase tracking-wider text-accent">
-                {formatEventDate(e.date)}
-              </p>
-              <p className="text-sm text-ink-muted">{e.location}</p>
+              <p className="mt-1 text-xs text-accent">{formatEventOpensDanish(e.start_date)}</p>
+              <p className="text-xs text-ink-muted">{formatEventUntilDanish(e.end_date)}</p>
+              <p className="mt-1 text-sm text-ink-muted">{e.location}</p>
               <p className="mt-2 line-clamp-2 text-sm text-ink-muted">{e.description}</p>
               <div className="mt-3 flex flex-wrap gap-2">
                 <button type="button" onClick={() => startEdit(e)} className="btn-outline text-[11px]">
@@ -147,11 +188,7 @@ export function EventsAdmin({ initial }: Props) {
       </ul>
 
       <div className="section-rule pt-10">
-        {!editingId ? (
-          <button type="button" onClick={startNew} className="btn-outline">
-            Tilføj ny begivenhed
-          </button>
-        ) : (
+        {editingId ? (
           <div className="space-y-6 rounded border border-secondary/50 bg-paper-warm/40 p-6">
             <h2 className="font-serif text-xl text-ink">
               {editingId === "new" ? "Ny begivenhed" : "Rediger begivenhed"}
@@ -179,13 +216,30 @@ export function EventsAdmin({ initial }: Props) {
               />
             </label>
             <label className="block text-sm text-ink-muted">
-              Dato
+              Startdato og åbningstidspunkt
+              <input
+                type="datetime-local"
+                value={form.start_datetime}
+                onChange={(ev) => setForm((f) => ({ ...f, start_datetime: ev.target.value }))}
+                className="mt-1 w-full border border-secondary/60 bg-paper px-3 py-2 text-sm text-ink"
+                required
+              />
+              <span className="mt-1 block text-xs text-ink-muted/80">
+                Vises fx som: «Åbner: 14. juni 2025 kl. 18.00» (efter du har gemt).
+              </span>
+            </label>
+            <label className="block text-sm text-ink-muted">
+              Slutdato
               <input
                 type="date"
-                value={form.date}
-                onChange={(ev) => setForm((f) => ({ ...f, date: ev.target.value }))}
+                value={form.end_date}
+                onChange={(ev) => setForm((f) => ({ ...f, end_date: ev.target.value }))}
                 className="mt-1 w-full border border-secondary/60 bg-paper px-3 py-2 text-sm text-ink"
+                required
               />
+              <span className="mt-1 block text-xs text-ink-muted/80">
+                Vises fx som: «Lukker: 20. juni 2025» — kun dato, ikke klokkeslæt.
+              </span>
             </label>
             <label className="block text-sm text-ink-muted">
               Sted / lokation
@@ -213,7 +267,7 @@ export function EventsAdmin({ initial }: Props) {
               </button>
             </div>
           </div>
-        )}
+        ) : null}
       </div>
 
       {msg ? <p className="text-sm text-accent">{msg}</p> : null}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminAnalyticsSummary } from "./admin-analytics-summary";
 import { UploadWidget } from "./upload-widget";
 
 const cards = [
@@ -20,7 +21,7 @@ const cards = [
   {
     href: "/admin/om",
     title: "Om kunstneren",
-    text: "Biografi, CV og portrætfoto.",
+    text: "Biografi og portrætfoto; udstillinger hentes fra begivenheder.",
   },
   {
     href: "/admin/kontakt",
@@ -29,7 +30,7 @@ const cards = [
   },
 ];
 
-export default function AdminHomePage() {
+export default async function AdminHomePage() {
   return (
     <div>
       <h1 className="font-serif text-3xl text-ink">Administration</h1>
@@ -37,6 +38,9 @@ export default function AdminHomePage() {
         Alt indhold gemmes i JSON-filer under <code className="text-xs">data/</code> og
         vises straks på den offentlige side efter gem.
       </p>
+
+      <AdminAnalyticsSummary />
+
       <ul className="mt-12 grid gap-6 sm:grid-cols-2">
         {cards.map((c) => (
           <li key={c.href}>

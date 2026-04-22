@@ -1,3 +1,10 @@
+/*
+-- Supabase migration (reference):
+-- ALTER TABLE events ADD COLUMN start_date timestamptz;
+-- ALTER TABLE events ADD COLUMN end_date date;
+-- ALTER TABLE events DROP COLUMN event_date;
+*/
+
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { slugIdFromTitle } from "@/lib/ids";
@@ -8,6 +15,37 @@ import {
   writeEvents,
 } from "@/lib/store";
 import type { EventItem } from "@/types/content";
+
+function normalizeStartDate(s: string): string {
+  const t = s.trim();
+  if (t.length === 16 && t[13] === ":") return `${t}:00`;
+  return t;
+}
+
+function normalizeEndDateYmd(s: string): string {
+  return s.trim().slice(0, 10);
+}
+
+function validateEventInput(input: {
+  title: string;
+  location: string;
+  start_date: string;
+  end_date: string;
+}): string | null {
+  const { title, location, start_date, end_date } = input;
+  if (!title || !location || !start_date || !end_date) {
+    return "Titel, startdato med tid, slutdato og sted er påkrævet";
+  }
+  const end = normalizeEndDateYmd(end_date);
+  const startDay = start_date.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(end)) {
+    return "Ugyldig slutdato";
+  }
+  if (end < startDay) {
+    return "Slutdato kan ikke være før startdato";
+  }
+  return null;
+}
 
 export async function POST(req: NextRequest) {
   const denied = await requireAdmin();
@@ -22,7 +60,8 @@ export async function POST(req: NextRequest) {
 
   const title = String(body.title ?? "").trim();
   const description = String(body.description ?? "");
-  const date = String(body.date ?? "").trim();
+  const start_date = normalizeStartDate(String(body.start_date ?? "").trim());
+  const end_date = normalizeEndDateYmd(String(body.end_date ?? "").trim());
   const location = String(body.location ?? "").trim();
   const imageRaw = body.image;
   const image =
@@ -30,11 +69,9 @@ export async function POST(req: NextRequest) {
       ? null
       : String(imageRaw).trim() || null;
 
-  if (!title || !date || !location) {
-    return NextResponse.json(
-      { error: "Titel, dato og sted er påkrævet" },
-      { status: 400 },
-    );
+  const err = validateEventInput({ title, location, start_date, end_date });
+  if (err) {
+    return NextResponse.json({ error: err }, { status: 400 });
   }
 
   const items = await readEvents();
@@ -47,7 +84,8 @@ export async function POST(req: NextRequest) {
     id,
     title,
     description,
-    date,
+    start_date,
+    end_date,
     location,
     image,
   };

@@ -22,7 +22,10 @@ export type Jewelry = {
 export type EventItem = {
   id: string;
   title: string;
-  date: string;
+  /** ISO 8601 dato-tid (fx timestamptz i Supabase). */
+  start_date: string;
+  /** Kun dato YYYY-MM-DD (date i Supabase). */
+  end_date: string;
   location: string;
   description: string;
   image?: string | null;
@@ -37,6 +40,7 @@ export type CvEntry = {
 export type AboutData = {
   biography: string;
   artistPhoto: string;
+  /** Bevares i JSON for bagudkompatibilitet; offentlig «Om» bruger begivenheder til udstillinger. */
   cvEntries: CvEntry[];
 };
 

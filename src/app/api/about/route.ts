@@ -35,16 +35,19 @@ export async function PUT(req: NextRequest) {
 
   const biography = String(body.biography ?? "").trim();
   const artistPhoto = String(body.artistPhoto ?? "").trim();
-  const cvEntries = body.cvEntries;
+  const prev = await readAbout();
+  const cvEntriesRaw = body.cvEntries;
+  const cvEntries: CvEntry[] = isCvEntries(cvEntriesRaw)
+    ? cvEntriesRaw
+    : Array.isArray(prev.cvEntries)
+      ? prev.cvEntries
+      : [];
 
   if (!biography) {
     return NextResponse.json({ error: "Biografi må ikke være tom" }, { status: 400 });
   }
   if (!artistPhoto) {
     return NextResponse.json({ error: "Portræt-URL påkrævet" }, { status: 400 });
-  }
-  if (!isCvEntries(cvEntries)) {
-    return NextResponse.json({ error: "Ugyldigt CV-format" }, { status: 400 });
   }
 
   const data: AboutData = {

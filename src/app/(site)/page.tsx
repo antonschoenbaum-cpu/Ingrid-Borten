@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ArtworkImage } from "@/components/artwork-image";
 import { SoldPrice } from "@/components/SoldPrice";
-import { formatEventDate, isEventPast } from "@/lib/format";
+import {
+  formatEventOpensDanish,
+  formatEventUntilDanish,
+  isEventPastByEndDate,
+} from "@/lib/format";
 import { getEvents, getJewelry, getPaintings } from "@/lib/data";
 
 export default async function HomePage() {
@@ -19,8 +23,8 @@ export default async function HomePage() {
     .slice(0, 3);
 
   const upcoming = events
-    .filter((e) => !isEventPast(e.date))
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .filter((e) => !isEventPastByEndDate(e.end_date))
+    .sort((a, b) => a.start_date.localeCompare(b.start_date))
     .slice(0, 2);
 
   return (
@@ -90,29 +94,29 @@ export default async function HomePage() {
           <h2 className="font-serif text-3xl text-ink">Seneste smykker</h2>
           <Link
             href="/smykker"
-              className="text-sm uppercase tracking-widest text-ink-muted underline-offset-4 transition hover:text-accent hover:underline"
+            className="text-sm uppercase tracking-widest text-ink-muted underline-offset-4 transition hover:text-accent hover:underline"
           >
             Se alle smykker
           </Link>
         </div>
         <div className="grid gap-8 sm:grid-cols-3">
-            {recentJewelry.map((j) => (
-              <Link key={j.id} href={`/smykker/${j.id}`} className="group block">
-                <div className="overflow-hidden border border-secondary/50 bg-paper transition duration-300 group-hover:border-accent/35 group-hover:shadow-md">
-                  <ArtworkImage
-                    src={j.image}
-                    alt={j.title}
-                    className="aspect-square w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
-                  />
-                  <div className="border-t border-secondary/40 px-4 py-4">
-                    <h3 className="font-serif text-lg">{j.title}</h3>
-                    <p className="mt-1">
-                      <SoldPrice price={j.price} sold={j.sold} size="card" />
-                    </p>
-                  </div>
+          {recentJewelry.map((j) => (
+            <Link key={j.id} href={`/smykker/${j.id}`} className="group block">
+              <div className="overflow-hidden border border-secondary/50 bg-paper transition duration-300 group-hover:border-accent/35 group-hover:shadow-md">
+                <ArtworkImage
+                  src={j.image}
+                  alt={j.title}
+                  className="aspect-square w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+                />
+                <div className="border-t border-secondary/40 px-4 py-4">
+                  <h3 className="font-serif text-lg">{j.title}</h3>
+                  <p className="mt-1">
+                    <SoldPrice price={j.price} sold={j.sold} size="card" />
+                  </p>
                 </div>
-              </Link>
-            ))}
+              </div>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -134,15 +138,15 @@ export default async function HomePage() {
               {upcoming.map((e) => (
                 <li
                   key={e.id}
-                  className="flex flex-col gap-2 border-b border-secondary/40 pb-6 last:border-0 md:flex-row md:items-baseline md:justify-between"
+                  className="flex flex-col gap-2 border-b border-secondary/40 pb-6 last:border-0 md:flex-row md:items-start md:justify-between md:gap-10"
                 >
-                  <div>
+                  <div className="min-w-0 shrink-0 md:max-w-md">
                     <h3 className="font-serif text-xl text-ink">{e.title}</h3>
-                    <p className="mt-1 text-sm text-ink-muted">
-                      {formatEventDate(e.date)} · {e.location}
-                    </p>
+                    <p className="mt-2 text-sm text-ink">{formatEventOpensDanish(e.start_date)}</p>
+                    <p className="mt-0.5 text-sm text-ink-muted">{formatEventUntilDanish(e.end_date)}</p>
+                    <p className="mt-2 text-sm text-ink-muted">{e.location}</p>
                   </div>
-                  <p className="max-w-xl text-sm leading-relaxed text-ink-muted">
+                  <p className="min-w-0 flex-1 text-sm leading-relaxed text-ink-muted">
                     {e.description}
                   </p>
                 </li>
