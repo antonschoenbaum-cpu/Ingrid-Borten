@@ -14,6 +14,11 @@ import {
   revalidatePublicContent,
   writeEvents,
 } from "@/lib/store";
+import {
+  canUseSupabaseEventsWrite,
+  createEventInSupabase,
+  readEventsFromSupabase,
+} from "@/lib/supabase-events";
 import type { EventItem } from "@/types/content";
 
 function normalizeStartDate(s: string): string {
@@ -47,6 +52,22 @@ function validateEventInput(input: {
   return null;
 }
 
+function persistErrorMessage(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (
+    msg.includes("EROFS") ||
+    msg.includes("/var/task") ||
+    msg.includes("read-only") ||
+    msg.includes("ENOENT")
+  ) {
+    return "Gem fejlede: serveren kan ikke skrive til data/events.json i dette miljø. Brug Supabase til begivenheder i produktion.";
+  }
+  if (msg.includes("relation") && msg.includes("events")) {
+    return 'Supabase fejl: tabel "events" findes ikke. Opret tabellen først.';
+  }
+  return `Gem fejlede på serveren: ${msg}`;
+}
+
 export async function POST(req: NextRequest) {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -69,29 +90,43 @@ export async function POST(req: NextRequest) {
       ? null
       : String(imageRaw).trim() || null;
 
-  const err = validateEventInput({ title, location, start_date, end_date });
-  if (err) {
-    return NextResponse.json({ error: err }, { status: 400 });
+  const verr = validateEventInput({ title, location, start_date, end_date });
+  if (verr) {
+    return NextResponse.json({ error: verr }, { status: 400 });
   }
 
-  const items = await readEvents();
-  let id = `evt-${slugIdFromTitle(title)}`;
-  while (items.some((e) => e.id === id)) {
-    id = `${id}-x`;
-  }
+  try {
+    const items = canUseSupabaseEventsWrite()
+      ? await readEventsFromSupabase()
+      : await readEvents();
+    let id = `evt-${slugIdFromTitle(title)}`;
+    while (items.some((e) => e.id === id)) {
+      id = `${id}-x`;
+    }
 
-  const event: EventItem = {
-    id,
-    title,
-    description,
-    start_date,
-    end_date,
-    location,
-    image,
-  };
-  items.push(event);
-  await writeEvents(items);
-  revalidatePublicContent();
-  revalidatePath(`/begivenheder`);
-  return NextResponse.json(event);
+    const event: EventItem = {
+      id,
+      title,
+      description,
+      start_date,
+      end_date,
+      location,
+      image,
+    };
+
+    if (canUseSupabaseEventsWrite()) {
+      const inserted = await createEventInSupabase(event);
+      revalidatePublicContent();
+      revalidatePath(`/begivenheder`);
+      return NextResponse.json(inserted);
+    }
+
+    items.push(event);
+    await writeEvents(items);
+    revalidatePublicContent();
+    revalidatePath(`/begivenheder`);
+    return NextResponse.json(event);
+  } catch (error) {
+    return NextResponse.json({ error: persistErrorMessage(error) }, { status: 500 });
+  }
 }

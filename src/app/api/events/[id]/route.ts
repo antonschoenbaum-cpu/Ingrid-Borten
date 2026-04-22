@@ -13,6 +13,12 @@ import {
   revalidatePublicContent,
   writeEvents,
 } from "@/lib/store";
+import {
+  canUseSupabaseEventsWrite,
+  deleteEventInSupabase,
+  readEventsFromSupabase,
+  updateEventInSupabase,
+} from "@/lib/supabase-events";
 import type { EventItem } from "@/types/content";
 
 function normalizeStartDate(s: string): string {
@@ -46,6 +52,22 @@ function validateEventInput(input: {
   return null;
 }
 
+function persistErrorMessage(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (
+    msg.includes("EROFS") ||
+    msg.includes("/var/task") ||
+    msg.includes("read-only") ||
+    msg.includes("ENOENT")
+  ) {
+    return "Handling fejlede: serveren kan ikke skrive til data/events.json i dette miljø. Brug Supabase til begivenheder i produktion.";
+  }
+  if (msg.includes("relation") && msg.includes("events")) {
+    return 'Supabase fejl: tabel "events" findes ikke. Opret tabellen først.';
+  }
+  return `Handling fejlede på serveren: ${msg}`;
+}
+
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function PUT(req: NextRequest, ctx: Ctx) {
@@ -60,7 +82,9 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Ugyldig JSON" }, { status: 400 });
   }
 
-  const items = await readEvents();
+  const items = canUseSupabaseEventsWrite()
+    ? await readEventsFromSupabase()
+    : await readEvents();
   const idx = items.findIndex((e) => e.id === id);
   if (idx === -1) {
     return NextResponse.json({ error: "Ikke fundet" }, { status: 404 });
@@ -99,11 +123,22 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     location,
     image: image ?? null,
   };
-  items[idx] = updated;
-  await writeEvents(items);
-  revalidatePublicContent();
-  revalidatePath("/begivenheder");
-  return NextResponse.json(updated);
+
+  try {
+    if (canUseSupabaseEventsWrite()) {
+      const saved = await updateEventInSupabase(updated);
+      revalidatePublicContent();
+      revalidatePath("/begivenheder");
+      return NextResponse.json(saved);
+    }
+    items[idx] = updated;
+    await writeEvents(items);
+    revalidatePublicContent();
+    revalidatePath("/begivenheder");
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json({ error: persistErrorMessage(error) }, { status: 500 });
+  }
 }
 
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
@@ -111,13 +146,25 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   if (denied) return denied;
   const { id } = await ctx.params;
 
-  const items = await readEvents();
-  const next = items.filter((e) => e.id !== id);
-  if (next.length === items.length) {
+  const items = canUseSupabaseEventsWrite()
+    ? await readEventsFromSupabase()
+    : await readEvents();
+  const exists = items.some((e) => e.id === id);
+  if (!exists) {
     return NextResponse.json({ error: "Ikke fundet" }, { status: 404 });
   }
-  await writeEvents(next);
-  revalidatePublicContent();
-  revalidatePath("/begivenheder");
-  return NextResponse.json({ ok: true });
+
+  try {
+    if (canUseSupabaseEventsWrite()) {
+      await deleteEventInSupabase(id);
+    } else {
+      const next = items.filter((e) => e.id !== id);
+      await writeEvents(next);
+    }
+    revalidatePublicContent();
+    revalidatePath("/begivenheder");
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json({ error: persistErrorMessage(error) }, { status: 500 });
+  }
 }

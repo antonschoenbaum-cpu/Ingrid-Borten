@@ -7,6 +7,7 @@ import {
   readJewelry as storeReadJewelry,
   readPaintings as storeReadPaintings,
 } from "@/lib/store";
+import { canUseSupabaseEventsRead, readEventsFromSupabase } from "@/lib/supabase-events";
 import { canUseSupabaseRead, readPaintingsFromSupabase } from "@/lib/supabase-paintings";
 
 const dataDir = path.join(process.cwd(), "data");
@@ -37,6 +38,13 @@ export async function getJewelry(): Promise<Jewelry[]> {
 
 export async function getEvents(): Promise<EventItem[]> {
   noStore();
+  if (canUseSupabaseEventsRead()) {
+    try {
+      return await readEventsFromSupabase();
+    } catch {
+      // Falder tilbage til JSON lokalt eller hvis Supabase midlertidigt fejler.
+    }
+  }
   return storeReadEvents();
 }
 
