@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { AdminAnalyticsSummary } from "./admin-analytics-summary";
 import { UploadWidget } from "./upload-widget";
 
 const cards = [
@@ -30,7 +29,7 @@ const cards = [
   },
 ];
 
-export default async function AdminHomePage() {
+export default function AdminHomePage() {
   return (
     <div>
       <h1 className="font-serif text-3xl text-ink">Administration</h1>
@@ -38,8 +37,6 @@ export default async function AdminHomePage() {
         Alt indhold gemmes i JSON-filer under <code className="text-xs">data/</code> og
         vises straks på den offentlige side efter gem.
       </p>
-
-      <AdminAnalyticsSummary />
 
       <ul className="mt-12 grid gap-6 sm:grid-cols-2">
         {cards.map((c) => (
