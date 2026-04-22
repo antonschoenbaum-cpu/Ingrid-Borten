@@ -45,7 +45,10 @@ export function AboutAdmin({ initial }: Props) {
         <h1 className="font-serif text-3xl text-ink">Om kunstneren</h1>
         <p className="mt-2 text-sm text-ink-muted">
           Biografi og portræt vises på den offentlige side under «Om Ingrid». Udstillinger i CV
-          hentes automatisk fra afsluttede begivenheder under Begivenheder.
+          hentes automatisk fra afsluttede begivenheder under Begivenheder. I produktion gemmes
+          indhold i Supabase-tabellen <code className="text-xs">about_content</code> (kør{" "}
+          <code className="text-xs">sql/supabase-about-setup.sql</code>); portræt-upload går til
+          Storage som ved malerier.
         </p>
       </div>
 

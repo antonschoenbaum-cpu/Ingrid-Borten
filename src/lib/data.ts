@@ -7,8 +7,25 @@ import {
   readJewelry as storeReadJewelry,
   readPaintings as storeReadPaintings,
 } from "@/lib/store";
-import { canUseSupabaseEventsRead, readEventsFromSupabase } from "@/lib/supabase-events";
-import { canUseSupabaseRead, readPaintingsFromSupabase } from "@/lib/supabase-paintings";
+import {
+  canUseSupabaseAboutRead,
+  readAboutFromSupabase,
+} from "@/lib/supabase-about";
+import {
+  canUseSupabaseEventsRead,
+  canUseSupabaseEventsWrite,
+  readEventsFromSupabase,
+} from "@/lib/supabase-events";
+import {
+  canUseSupabaseJewelryRead,
+  canUseSupabaseJewelryWrite,
+  readJewelryFromSupabase,
+} from "@/lib/supabase-jewelry";
+import {
+  canUseSupabaseRead,
+  canUseSupabaseWrite,
+  readPaintingsFromSupabase,
+} from "@/lib/supabase-paintings";
 
 const dataDir = path.join(process.cwd(), "data");
 
@@ -21,6 +38,11 @@ async function readJson<T>(file: string): Promise<T> {
 
 export async function getPaintings(): Promise<Painting[]> {
   noStore();
+  // Når API skriver til Supabase, må vi ikke falde tilbage til data/paintings.json —
+  // ellers kan admin vise JSON-seed mens slet/opret kun rammer databasen.
+  if (canUseSupabaseWrite()) {
+    return readPaintingsFromSupabase();
+  }
   if (canUseSupabaseRead()) {
     try {
       return await readPaintingsFromSupabase();
@@ -33,11 +55,24 @@ export async function getPaintings(): Promise<Painting[]> {
 
 export async function getJewelry(): Promise<Jewelry[]> {
   noStore();
+  if (canUseSupabaseJewelryWrite()) {
+    return readJewelryFromSupabase();
+  }
+  if (canUseSupabaseJewelryRead()) {
+    try {
+      return await readJewelryFromSupabase();
+    } catch {
+      // Falder tilbage til JSON lokalt eller hvis Supabase midlertidigt fejler.
+    }
+  }
   return storeReadJewelry();
 }
 
 export async function getEvents(): Promise<EventItem[]> {
   noStore();
+  if (canUseSupabaseEventsWrite()) {
+    return readEventsFromSupabase();
+  }
   if (canUseSupabaseEventsRead()) {
     try {
       return await readEventsFromSupabase();
@@ -50,6 +85,14 @@ export async function getEvents(): Promise<EventItem[]> {
 
 export async function getAbout(): Promise<AboutData> {
   noStore();
+  if (canUseSupabaseAboutRead()) {
+    try {
+      const row = await readAboutFromSupabase();
+      if (row) return row;
+    } catch {
+      // Falder tilbage til JSON.
+    }
+  }
   return storeReadAbout();
 }
 

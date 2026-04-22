@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/require-admin";
 import { readAbout, revalidateAboutPaths, writeAbout } from "@/lib/store";
+import {
+  canUseSupabaseAboutRead,
+  canUseSupabaseAboutWrite,
+  readAboutFromSupabase,
+  upsertAboutInSupabase,
+} from "@/lib/supabase-about";
 import type { AboutData, CvEntry } from "@/types/content";
 
 function isCvEntries(v: unknown): v is CvEntry[] {
@@ -15,10 +21,39 @@ function isCvEntries(v: unknown): v is CvEntry[] {
   );
 }
 
+async function readAboutForAdmin(): Promise<AboutData> {
+  if (canUseSupabaseAboutRead()) {
+    try {
+      const row = await readAboutFromSupabase();
+      if (row) return row;
+    } catch {
+      // falder tilbage til fil
+    }
+  }
+  return readAbout();
+}
+
+function persistErrorMessage(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (
+    msg.includes("EROFS") ||
+    msg.includes("/var/task") ||
+    msg.includes("read-only") ||
+    msg.includes("ENOENT")
+  ) {
+    return "Gem fejlede: serveren kan ikke skrive til data/about.json i dette miljø. Brug Supabase til Om-siden i produktion.";
+  }
+  if (msg.includes("relation") && msg.includes("about_content")) {
+    return 'Supabase fejl: tabel "about_content" findes ikke. Kør sql/supabase-about-setup.sql.';
+  }
+  return `Gem fejlede på serveren: ${msg}`;
+}
+
 export async function GET() {
   const denied = await requireAdmin();
   if (denied) return denied;
-  const about = await readAbout();
+
+  const about = await readAboutForAdmin();
   return NextResponse.json(about);
 }
 
@@ -35,7 +70,7 @@ export async function PUT(req: NextRequest) {
 
   const biography = String(body.biography ?? "").trim();
   const artistPhoto = String(body.artistPhoto ?? "").trim();
-  const prev = await readAbout();
+  const prev = await readAboutForAdmin();
   const cvEntriesRaw = body.cvEntries;
   const cvEntries: CvEntry[] = isCvEntries(cvEntriesRaw)
     ? cvEntriesRaw
@@ -55,7 +90,17 @@ export async function PUT(req: NextRequest) {
     artistPhoto,
     cvEntries,
   };
-  await writeAbout(data);
-  revalidateAboutPaths();
-  return NextResponse.json(data);
+
+  try {
+    if (canUseSupabaseAboutWrite()) {
+      const saved = await upsertAboutInSupabase(data);
+      revalidateAboutPaths();
+      return NextResponse.json(saved);
+    }
+    await writeAbout(data);
+    revalidateAboutPaths();
+    return NextResponse.json(data);
+  } catch (error) {
+    return NextResponse.json({ error: persistErrorMessage(error) }, { status: 500 });
+  }
 }

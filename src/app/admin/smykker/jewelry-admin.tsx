@@ -5,7 +5,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArtworkImage } from "@/components/artwork-image";
 import { UploadForm } from "@/components/UploadForm";
 import { formatPriceDKK } from "@/lib/format";
@@ -71,15 +71,26 @@ function FormFields({
   );
 }
 
+const fetchJson = (input: string, init?: RequestInit) =>
+  fetch(input, { credentials: "same-origin", ...init });
+
 export function JewelryAdmin({ initial }: Props) {
   const router = useRouter();
   const items = initial;
+  const sortedItems = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(empty);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2800);
+    return () => clearTimeout(t);
+  }, [toast]);
 
   function startEdit(p: Jewelry) {
     setEditingId(p.id);
@@ -115,7 +126,7 @@ export function JewelryAdmin({ initial }: Props) {
   async function toggleSold(p: Jewelry, sold: boolean) {
     setErr(null);
     setTogglingId(p.id);
-    const res = await fetch(`/api/jewelry/${p.id}`, {
+    const res = await fetchJson(`/api/jewelry/${encodeURIComponent(p.id)}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -160,9 +171,15 @@ export function JewelryAdmin({ initial }: Props) {
     }
 
     setPending(true);
+    if (!editingId) {
+      setPending(false);
+      return;
+    }
     const isNew = editingId === "new";
-    const url = isNew ? "/api/jewelry" : `/api/jewelry/${editingId}`;
-    const res = await fetch(url, {
+    const url = isNew
+      ? "/api/jewelry"
+      : `/api/jewelry/${encodeURIComponent(editingId)}`;
+    const res = await fetchJson(url, {
       method: isNew ? "POST" : "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -170,23 +187,30 @@ export function JewelryAdmin({ initial }: Props) {
     setPending(false);
     if (!res.ok) {
       const j = (await res.json().catch(() => ({}))) as { error?: string };
-      setErr(j.error ?? "Kunne ikke gemme.");
+      setErr(j.error ?? `Kunne ikke gemme (HTTP ${res.status}).`);
       return;
     }
     setMsg(isNew ? "Smykke oprettet." : "Smykke opdateret.");
-    cancelForm();
+    setToast(isNew ? "Succes: Nyt smykke er oprettet." : "Succes: Smykke er opdateret.");
+    setEditingId(null);
+    setForm(empty);
+    setErr(null);
     router.refresh();
   }
 
   async function remove(id: string) {
     if (!confirm("Slette dette smykke?")) return;
     setErr(null);
-    const res = await fetch(`/api/jewelry/${id}`, { method: "DELETE" });
+    const res = await fetchJson(`/api/jewelry/${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
     if (!res.ok) {
-      setErr("Kunne ikke slette.");
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      setErr(j.error ?? `Kunne ikke slette (HTTP ${res.status}).`);
       return;
     }
     if (editingId === id) cancelForm();
+    setToast("Smykket er slettet.");
     router.refresh();
   }
 
@@ -195,7 +219,10 @@ export function JewelryAdmin({ initial }: Props) {
       <div>
         <h1 className="font-serif text-3xl text-ink">Smykker</h1>
         <p className="mt-2 text-sm text-ink-muted">
-          Billedfiler gemmes under <code className="text-xs">/public/uploads/jewelry/</code>.
+          Upload sker via Supabase Storage i produktion; lokalt kan filer gemmes under{" "}
+          <code className="text-xs">/public/uploads/jewelry/</code>. Gem kræver tabellen{" "}
+          <code className="text-xs">jewelry</code> i Supabase (se{" "}
+          <code className="text-xs">sql/supabase-jewelry-setup.sql</code>).
         </p>
       </div>
 
@@ -229,8 +256,14 @@ export function JewelryAdmin({ initial }: Props) {
         </div>
       ) : null}
 
+      {toast ? (
+        <div className="fixed right-4 top-20 z-50 rounded border border-accent/40 bg-paper px-4 py-3 text-sm text-ink shadow-md">
+          {toast}
+        </div>
+      ) : null}
+
       <ul className="space-y-6">
-        {items.map((p) => (
+        {sortedItems.map((p) => (
           <li key={p.id} className="section-rule pt-6 first:border-0 first:pt-0">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
               <div className="h-28 w-40 shrink-0 overflow-hidden border border-secondary/50 bg-paper-warm">

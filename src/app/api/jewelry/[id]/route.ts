@@ -10,7 +10,29 @@ import {
   revalidatePublicContent,
   writeJewelry,
 } from "@/lib/store";
+import {
+  canUseSupabaseJewelryWrite,
+  deleteJewelryInSupabase,
+  readJewelryFromSupabase,
+  updateJewelryInSupabase,
+} from "@/lib/supabase-jewelry";
 import type { Jewelry } from "@/types/content";
+
+function persistErrorMessage(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (
+    msg.includes("EROFS") ||
+    msg.includes("/var/task") ||
+    msg.includes("read-only") ||
+    msg.includes("ENOENT")
+  ) {
+    return "Handling fejlede: serveren kan ikke skrive til data/jewelry.json i dette miljø. Brug Supabase til smykker i produktion.";
+  }
+  if (msg.includes("relation") && msg.includes("jewelry")) {
+    return 'Supabase fejl: tabel "jewelry" findes ikke. Opret tabellen først.';
+  }
+  return `Handling fejlede på serveren: ${msg}`;
+}
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -26,7 +48,9 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Ugyldig JSON" }, { status: 400 });
   }
 
-  const items = await readJewelry();
+  const items = canUseSupabaseJewelryWrite()
+    ? await readJewelryFromSupabase()
+    : await readJewelry();
   const idx = items.findIndex((p) => p.id === id);
   if (idx === -1) {
     return NextResponse.json({ error: "Ikke fundet" }, { status: 404 });
@@ -62,11 +86,22 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     createdAt,
     sold,
   };
-  items[idx] = updated;
-  await writeJewelry(items);
-  revalidatePublicContent();
-  revalidatePath(`/smykker/${id}`);
-  return NextResponse.json(updated);
+
+  try {
+    if (canUseSupabaseJewelryWrite()) {
+      const saved = await updateJewelryInSupabase(updated);
+      revalidatePublicContent();
+      revalidatePath(`/smykker/${id}`);
+      return NextResponse.json(saved);
+    }
+    items[idx] = updated;
+    await writeJewelry(items);
+    revalidatePublicContent();
+    revalidatePath(`/smykker/${id}`);
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json({ error: persistErrorMessage(error) }, { status: 500 });
+  }
 }
 
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
@@ -74,13 +109,25 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   if (denied) return denied;
   const { id } = await ctx.params;
 
-  const items = await readJewelry();
-  const next = items.filter((p) => p.id !== id);
-  if (next.length === items.length) {
+  const items = canUseSupabaseJewelryWrite()
+    ? await readJewelryFromSupabase()
+    : await readJewelry();
+  const exists = items.some((p) => p.id === id);
+  if (!exists) {
     return NextResponse.json({ error: "Ikke fundet" }, { status: 404 });
   }
-  await writeJewelry(next);
-  revalidatePublicContent();
-  revalidatePath(`/smykker/${id}`);
-  return NextResponse.json({ ok: true });
+
+  try {
+    if (canUseSupabaseJewelryWrite()) {
+      await deleteJewelryInSupabase(id);
+    } else {
+      const next = items.filter((p) => p.id !== id);
+      await writeJewelry(next);
+    }
+    revalidatePublicContent();
+    revalidatePath(`/smykker/${id}`);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json({ error: persistErrorMessage(error) }, { status: 500 });
+  }
 }
