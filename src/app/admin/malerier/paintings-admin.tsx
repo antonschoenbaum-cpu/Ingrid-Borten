@@ -176,7 +176,7 @@ export function PaintingsAdmin({ initial }: Props) {
     setPending(false);
     if (!res.ok) {
       const j = (await res.json().catch(() => ({}))) as { error?: string };
-      setErr(j.error ?? "Kunne ikke gemme.");
+      setErr(j.error ?? `Kunne ikke gemme (HTTP ${res.status}).`);
       return;
     }
     setMsg(isNew ? "Maleri oprettet." : "Maleri opdateret.");
@@ -204,7 +204,8 @@ export function PaintingsAdmin({ initial }: Props) {
       <div>
         <h1 className="font-serif text-3xl text-ink">Malerier</h1>
         <p className="mt-2 text-sm text-ink-muted">
-          Billedfiler gemmes under <code className="text-xs">/public/uploads/paintings/</code>.
+          Upload sker via Supabase Storage i produktion; lokalt kan filer gemmes under{" "}
+          <code className="text-xs">/public/uploads/paintings/</code>.
         </p>
       </div>
 

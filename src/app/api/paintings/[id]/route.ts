@@ -10,7 +10,29 @@ import {
   revalidatePublicContent,
   writePaintings,
 } from "@/lib/store";
+import {
+  canUseSupabaseWrite,
+  deletePaintingInSupabase,
+  readPaintingsFromSupabase,
+  updatePaintingInSupabase,
+} from "@/lib/supabase-paintings";
 import type { Painting } from "@/types/content";
+
+function writeErrorMessage(error: unknown): string {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (
+    msg.includes("EROFS") ||
+    msg.includes("/var/task") ||
+    msg.includes("read-only") ||
+    msg.includes("ENOENT")
+  ) {
+    return "Gem fejlede: serveren kan ikke skrive til data/paintings.json i dette miljø. Brug en database (fx Supabase) til produktdata i produktion.";
+  }
+  if (msg.includes("relation") && msg.includes("paintings")) {
+    return 'Supabase fejl: tabel "paintings" findes ikke. Opret tabellen først.';
+  }
+  return `Gem fejlede på serveren: ${msg}`;
+}
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -26,7 +48,9 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Ugyldig JSON" }, { status: 400 });
   }
 
-  const items = await readPaintings();
+  const items = canUseSupabaseWrite()
+    ? await readPaintingsFromSupabase()
+    : await readPaintings();
   const idx = items.findIndex((p) => p.id === id);
   if (idx === -1) {
     return NextResponse.json({ error: "Ikke fundet" }, { status: 404 });
@@ -53,20 +77,30 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     return NextResponse.json({ error: "Ugyldig pris" }, { status: 400 });
   }
 
-  const updated: Painting = {
-    id,
-    title,
-    description,
-    image,
-    price,
-    createdAt,
-    sold,
-  };
-  items[idx] = updated;
-  await writePaintings(items);
-  revalidatePublicContent();
-  revalidatePath(`/malerier/${id}`);
-  return NextResponse.json(updated);
+  try {
+    const updated: Painting = {
+      id,
+      title,
+      description,
+      image,
+      price,
+      createdAt,
+      sold,
+    };
+    if (canUseSupabaseWrite()) {
+      const saved = await updatePaintingInSupabase(updated);
+      revalidatePublicContent();
+      revalidatePath(`/malerier/${id}`);
+      return NextResponse.json(saved);
+    }
+    items[idx] = updated;
+    await writePaintings(items);
+    revalidatePublicContent();
+    revalidatePath(`/malerier/${id}`);
+    return NextResponse.json(updated);
+  } catch (error) {
+    return NextResponse.json({ error: writeErrorMessage(error) }, { status: 500 });
+  }
 }
 
 export async function DELETE(_req: NextRequest, ctx: Ctx) {
@@ -74,13 +108,23 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
   if (denied) return denied;
   const { id } = await ctx.params;
 
-  const items = await readPaintings();
+  const items = canUseSupabaseWrite()
+    ? await readPaintingsFromSupabase()
+    : await readPaintings();
   const next = items.filter((p) => p.id !== id);
   if (next.length === items.length) {
     return NextResponse.json({ error: "Ikke fundet" }, { status: 404 });
   }
-  await writePaintings(next);
-  revalidatePublicContent();
-  revalidatePath(`/malerier/${id}`);
-  return NextResponse.json({ ok: true });
+  try {
+    if (canUseSupabaseWrite()) {
+      await deletePaintingInSupabase(id);
+    } else {
+      await writePaintings(next);
+    }
+    revalidatePublicContent();
+    revalidatePath(`/malerier/${id}`);
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json({ error: writeErrorMessage(error) }, { status: 500 });
+  }
 }

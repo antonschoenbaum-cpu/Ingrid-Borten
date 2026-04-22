@@ -7,6 +7,7 @@ import {
   readJewelry as storeReadJewelry,
   readPaintings as storeReadPaintings,
 } from "@/lib/store";
+import { canUseSupabaseRead, readPaintingsFromSupabase } from "@/lib/supabase-paintings";
 
 const dataDir = path.join(process.cwd(), "data");
 
@@ -19,6 +20,13 @@ async function readJson<T>(file: string): Promise<T> {
 
 export async function getPaintings(): Promise<Painting[]> {
   noStore();
+  if (canUseSupabaseRead()) {
+    try {
+      return await readPaintingsFromSupabase();
+    } catch {
+      // Falder tilbage til JSON lokalt eller hvis Supabase midlertidigt fejler.
+    }
+  }
   return storeReadPaintings();
 }
 
