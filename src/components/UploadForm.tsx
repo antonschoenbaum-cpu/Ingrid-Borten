@@ -23,10 +23,15 @@ export function UploadForm({ folder, label = "Upload billede", onUploaded }: Pro
     const fd = new FormData();
     fd.append("folder", folder);
     fd.append("file", file);
-    const res = await fetch("/api/upload", { method: "POST", body: fd });
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: fd,
+      credentials: "same-origin",
+    });
     setPending(false);
     if (!res.ok) {
-      setStatus("Upload mislykkedes. Er du logget ind?");
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      setStatus(j.error ?? `Upload mislykkedes (HTTP ${res.status}).`);
       return;
     }
     const data = (await res.json()) as { url: string };

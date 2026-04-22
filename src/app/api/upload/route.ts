@@ -14,32 +14,48 @@ export async function POST(req: NextRequest) {
   const denied = await requireAdmin();
   if (denied) return denied;
 
-  const formData = await req.formData();
-  const file = formData.get("file");
-  const folderRaw = formData.get("folder");
-  const folderStr = typeof folderRaw === "string" ? folderRaw : "";
-  if (!isFolder(folderStr)) {
+  try {
+    const formData = await req.formData();
+    const file = formData.get("file");
+    const folderRaw = formData.get("folder");
+    const folderStr = typeof folderRaw === "string" ? folderRaw : "";
+    if (!isFolder(folderStr)) {
+      return NextResponse.json(
+        { error: "Ugyldig mappe. Brug paintings, jewelry, events eller artist." },
+        { status: 400 },
+      );
+    }
+
+    if (!file || typeof (file as Blob).arrayBuffer !== "function" || (file as Blob).size === 0) {
+      return NextResponse.json({ error: "Manglende fil." }, { status: 400 });
+    }
+
+    const original = typeof (file as File).name === "string" ? (file as File).name : "upload.bin";
+    const safe = original.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
+    const name = `${Date.now()}-${safe || "fil"}`;
+    const folder = folderStr as Folder;
+    const relDir = path.join("public", "uploads", folder);
+    const absDir = path.join(process.cwd(), relDir);
+    await mkdir(absDir, { recursive: true });
+    const buffer = Buffer.from(await (file as Blob).arrayBuffer());
+    await writeFile(path.join(absDir, name), buffer);
+
+    const url = `/uploads/${folder}/${name}`;
+    return NextResponse.json({ url });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Ukendt fejl";
+    if (msg.includes("EROFS") || msg.includes("read-only")) {
+      return NextResponse.json(
+        {
+          error:
+            "Upload fejlede: serverens filsystem er skrivebeskyttet. Lokale uploads til /public virker typisk ikke på serverless hosting.",
+        },
+        { status: 500 },
+      );
+    }
     return NextResponse.json(
-      { error: "Ugyldig mappe. Brug paintings, jewelry, events eller artist." },
-      { status: 400 },
+      { error: `Upload fejlede på serveren: ${msg}` },
+      { status: 500 },
     );
   }
-
-  if (!file || !(file instanceof Blob) || file.size === 0) {
-    return NextResponse.json({ error: "Manglende fil" }, { status: 400 });
-  }
-
-  const original =
-    typeof (file as File).name === "string" ? (file as File).name : "upload.bin";
-  const safe = original.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 80);
-  const name = `${Date.now()}-${safe || "fil"}`;
-  const folder = folderStr as Folder;
-  const relDir = path.join("public", "uploads", folder);
-  const absDir = path.join(process.cwd(), relDir);
-  await mkdir(absDir, { recursive: true });
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(path.join(absDir, name), buffer);
-
-  const url = `/uploads/${folder}/${name}`;
-  return NextResponse.json({ url });
 }
