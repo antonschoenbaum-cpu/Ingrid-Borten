@@ -28,6 +28,8 @@ export function ContactSection({
   const [message, setMessage] = useState(initialMessage);
   const [pending, setPending] = useState(false);
   const [status, setStatus] = useState<"success" | "error" | null>(null);
+  const safeFacebookUrl = hasUrl(facebookUrl) ? (facebookUrl ?? "").trim() : "";
+  const safeInstagramUrl = hasUrl(instagramUrl) ? (instagramUrl ?? "").trim() : "";
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,11 +72,11 @@ export function ContactSection({
         </a>
       </div>
 
-      {hasUrl(facebookUrl) || hasUrl(instagramUrl) ? (
+      {safeFacebookUrl || safeInstagramUrl ? (
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
-          {hasUrl(facebookUrl) ? (
+          {safeFacebookUrl ? (
             <a
-              href={facebookUrl.trim()}
+              href={safeFacebookUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm uppercase tracking-widest text-ink-muted transition hover:text-ink"
@@ -83,9 +85,9 @@ export function ContactSection({
               {artistName} på Facebook
             </a>
           ) : null}
-          {hasUrl(instagramUrl) ? (
+          {safeInstagramUrl ? (
             <a
-              href={instagramUrl.trim()}
+              href={safeInstagramUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm uppercase tracking-widest text-ink-muted transition hover:text-ink"
