@@ -34,8 +34,7 @@ export default function AdminHomePage() {
     <div>
       <h1 className="font-serif text-3xl text-ink">Administration</h1>
       <p className="mt-3 max-w-xl text-sm text-ink-muted">
-        Alt indhold gemmes i JSON-filer under <code className="text-xs">data/</code> og
-        vises straks på den offentlige side efter gem.
+        Alt indhold gemmes automatisk.
       </p>
 
       <ul className="mt-12 grid gap-6 sm:grid-cols-2">

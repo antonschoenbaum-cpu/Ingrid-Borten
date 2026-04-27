@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: "Kontakt",
 };
 
+const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
 const email = process.env.CONTACT_EMAIL ?? "ingrid@example.com";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
@@ -31,7 +32,7 @@ export default async function ContactPage({
   let initialMessage = "";
   if (vare) {
     const kind = type === "smykke" ? "smykket" : "maleriet";
-    initialMessage = `Hej Ingrid,\n\nJeg skriver vedrørende ${kind} «${decodeURIComponent(vare)}».\n\n`;
+    initialMessage = `Hej ${artistName},\n\nJeg skriver vedrørende ${kind} «${decodeURIComponent(vare)}».\n\n`;
   }
 
   return (
@@ -39,7 +40,7 @@ export default async function ContactPage({
       <header className="mb-12 text-center">
         <h1 className="font-serif text-4xl text-ink md:text-5xl">Kontakt</h1>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-ink-muted">
-          Tag kontakt til Ingrid Simmenæs Borten
+          {`Tag kontakt til ${artistName}`}
         </p>
       </header>
 
@@ -49,6 +50,7 @@ export default async function ContactPage({
         facebookUrl={facebookUrl}
         instagramUrl={instagramUrl}
         initialMessage={initialMessage}
+        artistName={artistName}
       />
     </div>
   );

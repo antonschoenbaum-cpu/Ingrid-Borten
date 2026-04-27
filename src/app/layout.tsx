@@ -3,6 +3,8 @@ import { Inter, Playfair_Display } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
+const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
+
 const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
@@ -17,11 +19,10 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "Ingrid Simmenæs Borten · Malerier og smykker",
-    template: "%s · Ingrid Simmenæs Borten",
+    default: `${artistName} · Malerier og smykker`,
+    template: `%s · ${artistName}`,
   },
-  description:
-    "Norsk kunstner: ekspressive malerier og håndlavede smykker med nordisk ro.",
+  description: `${artistName}: ekspressive malerier og håndlavede smykker med nordisk ro.`,
 };
 
 export default function RootLayout({

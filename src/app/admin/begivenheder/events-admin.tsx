@@ -49,7 +49,7 @@ function EventFormFields({
     <div className="space-y-6">
       <UploadForm
         folder="events"
-        label="Upload billede (valgfrit)"
+        label="Vælg et billede fra din computer"
         onUploaded={(url) => setForm((f) => ({ ...f, image: url }))}
       />
       <label className="block text-sm text-ink-muted">
@@ -234,11 +234,7 @@ export function EventsAdmin({ initial }: Props) {
     <div className="space-y-10">
       <div>
         <h1 className="font-serif text-3xl text-ink">Begivenheder</h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          Valgfrit billede kan uploades via Supabase Storage i produktion; lokalt under{" "}
-          <code className="text-xs">/public/uploads/events/</code>. Udstillinger på «Om» hentes fra
-          afsluttede begivenheder.
-        </p>
+        <p className="mt-2 text-sm text-ink-muted">Udstillinger på «Om» hentes fra afsluttede begivenheder.</p>
       </div>
 
       <button type="button" onClick={startNew} className="btn-outline">

@@ -28,7 +28,7 @@ function FormFields({
     <div className="space-y-6">
       <UploadForm
         folder="jewelry"
-        label="Upload billede (gemmes under /uploads/jewelry/)"
+        label="Vælg et billede fra din computer"
         onUploaded={(url) => setForm((f) => ({ ...f, image: url }))}
       />
       <label className="block text-sm text-ink-muted">
@@ -218,12 +218,6 @@ export function JewelryAdmin({ initial }: Props) {
     <div className="space-y-10">
       <div>
         <h1 className="font-serif text-3xl text-ink">Smykker</h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          Upload sker via Supabase Storage i produktion; lokalt kan filer gemmes under{" "}
-          <code className="text-xs">/public/uploads/jewelry/</code>. Gem kræver tabellen{" "}
-          <code className="text-xs">jewelry</code> i Supabase (se{" "}
-          <code className="text-xs">sql/supabase-jewelry-setup.sql</code>).
-        </p>
       </div>
 
       <button type="button" onClick={startNew} className="btn-outline">

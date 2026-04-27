@@ -8,6 +8,7 @@ import {
   Gem,
   Home,
   ImageIcon,
+  KeyRound,
   Palette,
   Settings,
   UserRound,
@@ -20,6 +21,7 @@ const links = [
   { href: "/admin/begivenheder", label: "Begivenheder", icon: CalendarDays },
   { href: "/admin/om", label: "Om kunstneren", icon: UserRound },
   { href: "/admin/kontakt", label: "Sociale medier", icon: Settings },
+  { href: "/admin/indstillinger", label: "Indstillinger", icon: KeyRound },
 ];
 
 export function AdminSidebar() {

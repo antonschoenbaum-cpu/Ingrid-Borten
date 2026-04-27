@@ -37,25 +37,31 @@ export function ContactLinksEditor({ initial }: Props) {
       </p>
       <label className="block text-sm text-ink-muted">
         Facebook-profil
+        <p className="mt-1 text-xs text-ink-muted">
+          Indsæt din Facebook-sides fulde URL, fx https://facebook.com/ditnavnher
+        </p>
         <input
           value={facebookUrl}
           onChange={(e) => setFacebookUrl(e.target.value)}
           type="text"
           inputMode="url"
           autoComplete="url"
-          placeholder="https://www.facebook.com/…"
+          placeholder="https://facebook.com/ditnavnher"
           className="mt-1 w-full border border-ink/15 bg-paper-warm px-3 py-2 text-ink"
         />
       </label>
       <label className="block text-sm text-ink-muted">
         Instagram-profil
+        <p className="mt-1 text-xs text-ink-muted">
+          Indsæt din Instagram-profils fulde URL, fx https://instagram.com/ditnavnher
+        </p>
         <input
           value={instagramUrl}
           onChange={(e) => setInstagramUrl(e.target.value)}
           type="text"
           inputMode="url"
           autoComplete="url"
-          placeholder="https://www.instagram.com/…"
+          placeholder="https://instagram.com/ditnavnher"
           className="mt-1 w-full border border-ink/15 bg-paper-warm px-3 py-2 text-ink"
         />
       </label>

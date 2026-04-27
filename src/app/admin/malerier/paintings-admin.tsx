@@ -28,7 +28,7 @@ function FormFields({
     <div className="space-y-6">
       <UploadForm
         folder="paintings"
-        label="Upload billede (gemmes under /uploads/paintings/)"
+        label="Vælg et billede fra din computer"
         onUploaded={(url) => setForm((f) => ({ ...f, image: url }))}
       />
       <label className="block text-sm text-ink-muted">
@@ -203,10 +203,6 @@ export function PaintingsAdmin({ initial }: Props) {
     <div className="space-y-10">
       <div>
         <h1 className="font-serif text-3xl text-ink">Malerier</h1>
-        <p className="mt-2 text-sm text-ink-muted">
-          Upload sker via Supabase Storage i produktion; lokalt kan filer gemmes under{" "}
-          <code className="text-xs">/public/uploads/paintings/</code>.
-        </p>
       </div>
 
       <button type="button" onClick={startNew} className="btn-outline">

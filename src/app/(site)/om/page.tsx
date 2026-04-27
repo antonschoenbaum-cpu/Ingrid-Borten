@@ -4,8 +4,10 @@ import { ArtworkImage } from "@/components/artwork-image";
 import { formatPastEventCvLine, isEventPastByEndDate } from "@/lib/format";
 import { getAbout, getEvents } from "@/lib/data";
 
+const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
+
 export const metadata: Metadata = {
-  title: "Om Ingrid",
+  title: `Om ${artistName}`,
 };
 
 const quickNav = [
@@ -32,10 +34,10 @@ export default async function OmPage() {
         <div className="absolute inset-0 bg-gradient-to-t from-paper via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 px-5 pb-10 md:px-8">
           <div className="mx-auto max-w-6xl">
-            <h1 className="font-serif text-4xl text-ink md:text-5xl">Om Ingrid</h1>
+            <h1 className="font-serif text-4xl text-ink md:text-5xl">{`Om ${artistName}`}</h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-ink-muted md:text-base">
-              Ingrid Simmenæs Borten · malerier og smykker. Brug menuen nedenfor til at springe til
-              biografi, portræt eller udvalgte udstillinger.
+              {artistName} · malerier og smykker. Brug menuen nedenfor til at springe til biografi,
+              portræt eller udvalgte udstillinger.
             </p>
           </div>
         </div>
@@ -75,13 +77,10 @@ export default async function OmPage() {
             <div className="border border-secondary/50 bg-paper-warm p-2 shadow-sm">
               <ArtworkImage
                 src={about.artistPhoto}
-                alt="Portræt af Ingrid Simmenæs Borten"
+                alt={`Portræt af ${artistName}`}
                 className="w-full object-cover"
               />
             </div>
-            <p className="mt-3 text-center text-xs text-ink-muted lg:text-left">
-              Foto vises også her, så du hurtigt kan sætte ansigt på kunstneren.
-            </p>
           </aside>
 
           <section id="udstillinger" className="scroll-mt-32 lg:col-start-1 lg:row-start-2">

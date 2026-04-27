@@ -44,11 +44,8 @@ export function AboutAdmin({ initial }: Props) {
       <div>
         <h1 className="font-serif text-3xl text-ink">Om kunstneren</h1>
         <p className="mt-2 text-sm text-ink-muted">
-          Biografi og portræt vises på den offentlige side under «Om Ingrid». Udstillinger i CV
-          hentes automatisk fra afsluttede begivenheder under Begivenheder. I produktion gemmes
-          indhold i Supabase-tabellen <code className="text-xs">about_content</code> (kør{" "}
-          <code className="text-xs">sql/supabase-about-setup.sql</code>); portræt-upload går til
-          Storage som ved malerier.
+          Biografi og portræt vises på den offentlige side. Udstillinger i CV hentes automatisk
+          fra afsluttede begivenheder.
         </p>
       </div>
 
@@ -66,7 +63,7 @@ export function AboutAdmin({ initial }: Props) {
         <h2 className="font-serif text-xl text-ink">Portrætfoto</h2>
         <UploadForm
           folder="artist"
-          label="Upload portræt (gemmes under /uploads/artist/)"
+          label="Vælg et billede fra din computer"
           onUploaded={(url) => setArtistPhoto(url)}
         />
         <label className="block text-sm text-ink-muted">

@@ -6,13 +6,14 @@ import { Mail } from "lucide-react";
 
 type Props = {
   email: string;
-  facebookUrl: string;
-  instagramUrl: string;
+  facebookUrl: string | null;
+  instagramUrl: string | null;
   initialMessage: string;
+  artistName: string;
 };
 
-function hasUrl(s: string) {
-  return s.trim().length > 0;
+function hasUrl(s: string | null | undefined) {
+  return typeof s === "string" && s.trim().length > 0;
 }
 
 export function ContactSection({
@@ -20,23 +21,46 @@ export function ContactSection({
   facebookUrl,
   instagramUrl,
   initialMessage,
+  artistName,
 }: Props) {
   const [name, setName] = useState("");
   const [fromEmail, setFromEmail] = useState("");
   const [message, setMessage] = useState(initialMessage);
+  const [pending, setPending] = useState(false);
+  const [status, setStatus] = useState<"success" | "error" | null>(null);
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    const subject = encodeURIComponent("Henvendelse fra hjemmeside");
-    const body = encodeURIComponent(
-      `Navn: ${name}\nE-mail: ${fromEmail}\n\n${message}`,
-    );
-    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+    setStatus(null);
+    setPending(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          email: fromEmail.trim(),
+          message: message.trim(),
+        }),
+      });
+      if (!res.ok) {
+        setStatus("error");
+        return;
+      }
+      setStatus("success");
+      setName("");
+      setFromEmail("");
+      setMessage("");
+    } catch {
+      setStatus("error");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
     <div className="space-y-14">
-      <div className="border border-ink/10 bg-paper-warm/60 p-8 text-center shadow-sm">
+      <div className="text-center">
         <a
           href={`mailto:${email}`}
           className="inline-flex items-center gap-3 font-serif text-xl text-ink transition hover:text-sage-deep"
@@ -44,13 +68,6 @@ export function ContactSection({
           <Mail className="size-5 shrink-0 text-sage-deep" strokeWidth={1.5} />
           {email}
         </a>
-        <p className="mt-3 text-sm text-ink-muted">
-          E-mail kan ændres i miljøvariablen{" "}
-          <code className="rounded bg-linen px-1">CONTACT_EMAIL</code>. Facebook- og
-          Instagram-links redigeres under{" "}
-          <span className="whitespace-nowrap">Admin → Sociale medier</span>, når du er logget
-          ind. Biografi og portræt under <span className="whitespace-nowrap">Admin → Om</span>.
-        </p>
       </div>
 
       {hasUrl(facebookUrl) || hasUrl(instagramUrl) ? (
@@ -63,7 +80,7 @@ export function ContactSection({
               className="inline-flex items-center gap-2 text-sm uppercase tracking-widest text-ink-muted transition hover:text-ink"
             >
               <FacebookIcon className="size-5" />
-              Ingrid Borten på Facebook
+              {artistName} på Facebook
             </a>
           ) : null}
           {hasUrl(instagramUrl) ? (
@@ -74,7 +91,7 @@ export function ContactSection({
               className="inline-flex items-center gap-2 text-sm uppercase tracking-widest text-ink-muted transition hover:text-ink"
             >
               <InstagramIcon className="size-5" />
-              Ingrid Borten på Instagram
+              {artistName} på Instagram
             </a>
           ) : null}
         </div>
@@ -117,13 +134,17 @@ export function ContactSection({
           </label>
           <button
             type="submit"
+            disabled={pending}
             className="w-full border border-ink bg-ink py-3 text-sm uppercase tracking-widest text-paper transition hover:bg-ink/90"
           >
-            Åbn e-mailprogram
+            {pending ? "Sender..." : "Send besked"}
           </button>
-          <p className="text-center text-xs text-ink-muted">
-            Formularen åbner dit standard e-mailprogram med beskeden — ingen serverafsendelse.
-          </p>
+          {status === "success" ? (
+            <p className="text-center text-sm text-sage-deep">Besked sendt!</p>
+          ) : null}
+          {status === "error" ? (
+            <p className="text-center text-sm text-rose-dust">Noget gik galt, prøv igen</p>
+          ) : null}
         </form>
       </section>
     </div>

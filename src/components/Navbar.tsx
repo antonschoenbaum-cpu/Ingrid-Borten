@@ -5,15 +5,6 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { LogIn, Menu, X } from "lucide-react";
 
-const nav = [
-  { href: "/", label: "Hjem" },
-  { href: "/om", label: "Om Ingrid" },
-  { href: "/malerier", label: "Malerier" },
-  { href: "/smykker", label: "Smykker" },
-  { href: "/begivenheder", label: "Begivenheder" },
-  { href: "/kontakt", label: "Kontakt" },
-];
-
 function navLinkClass(active: boolean) {
   return [
     "text-[13px] tracking-wide text-ink-muted transition hover:text-ink",
@@ -21,9 +12,21 @@ function navLinkClass(active: boolean) {
   ].join(" ");
 }
 
-export function Navbar() {
+type NavbarProps = {
+  artistName: string;
+};
+
+export function Navbar({ artistName }: NavbarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const nav = [
+    { href: "/", label: "Hjem" },
+    { href: "/om", label: `Om ${artistName}` },
+    { href: "/malerier", label: "Malerier" },
+    { href: "/smykker", label: "Smykker" },
+    { href: "/begivenheder", label: "Begivenheder" },
+    { href: "/kontakt", label: "Kontakt" },
+  ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-secondary/40 bg-paper/95 backdrop-blur-sm">
@@ -32,7 +35,7 @@ export function Navbar() {
           href="/"
           className="shrink-0 font-serif text-[1.05rem] tracking-tight text-ink md:text-[1.15rem]"
         >
-          Ingrid Simmenæs Borten
+          {artistName}
         </Link>
 
         <nav

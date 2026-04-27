@@ -32,7 +32,7 @@ export function UploadWidget() {
       return;
     }
     const data = (await res.json()) as { url: string };
-    setStatus(`Gemt: ${data.url} — brug stien i maleri/smykke/begivenhed eller under Om.`);
+    setStatus(`Billede uploadet ✓ ${data.url}`);
     form.reset();
   }
 
