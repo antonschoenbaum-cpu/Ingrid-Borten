@@ -19,9 +19,10 @@ type NavbarProps = {
 export function Navbar({ artistName }: NavbarProps) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const artistFirstName = artistName.trim().split(/\s+/)[0] || artistName;
   const nav = [
     { href: "/", label: "Hjem" },
-    { href: "/om", label: `Om ${artistName}` },
+    { href: "/om", label: "Om" },
     { href: "/malerier", label: "Malerier" },
     { href: "/smykker", label: "Smykker" },
     { href: "/begivenheder", label: "Begivenheder" },
@@ -35,7 +36,7 @@ export function Navbar({ artistName }: NavbarProps) {
           href="/"
           className="shrink-0 font-serif text-[1.05rem] tracking-tight text-ink md:text-[1.15rem]"
         >
-          {artistName}
+          {artistFirstName}
         </Link>
 
         <nav
