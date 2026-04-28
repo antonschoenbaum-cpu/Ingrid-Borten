@@ -17,8 +17,8 @@ import {
 } from "lucide-react";
 
 const links = [
-  { href: "/admin/forside", label: "Forside", icon: Home },
   { href: "/admin", label: "Oversigt", icon: Home },
+  { href: "/admin/forside", label: "Forside", icon: Home },
   { href: "/admin/malerier", label: "Malerier", icon: Palette },
   { href: "/admin/smykker", label: "Smykker", icon: Gem },
   { href: "/admin/begivenheder", label: "Begivenheder", icon: CalendarDays },

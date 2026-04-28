@@ -1,13 +1,12 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 
 function LoginFields() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/admin";
+  const callbackUrl = "/admin";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -28,7 +27,7 @@ function LoginFields() {
       setError("Forkert brugernavn eller adgangskode.");
       return;
     }
-    router.push(res?.url ?? callbackUrl);
+    router.push(callbackUrl);
     router.refresh();
   }
 
