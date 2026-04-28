@@ -87,6 +87,14 @@ export async function readAbout(): Promise<AboutData> {
   return {
     ...data,
     cvEntries: Array.isArray(data.cvEntries) ? data.cvEntries : [],
+    heroTitle: data.heroTitle ?? "",
+    heroSubtitle: data.heroSubtitle ?? "",
+    heroDescription: data.heroDescription ?? "",
+    heroImage1: data.heroImage1 ?? "",
+    heroImage2: data.heroImage2 ?? "",
+    heroImage3: data.heroImage3 ?? "",
+    heroImage4: data.heroImage4 ?? "",
+    heroImage5: data.heroImage5 ?? "",
   };
 }
 

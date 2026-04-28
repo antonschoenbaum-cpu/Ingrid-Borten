@@ -13,6 +13,8 @@ type JewelryRow = {
   price: number;
   created_at: string;
   sold: boolean | null;
+  stock: number | null;
+  stripe_price_id: string | null;
 };
 
 function supabaseUrl(): string {
@@ -70,6 +72,8 @@ function mapRowToJewelry(r: JewelryRow): Jewelry {
     price: Number(r.price),
     createdAt: String(r.created_at).slice(0, 10),
     sold: r.sold === true,
+    stock: Number.isFinite(Number(r.stock)) ? Number(r.stock) : 1,
+    stripePriceId: r.stripe_price_id ?? null,
   };
 }
 
@@ -77,7 +81,7 @@ export async function readJewelryFromSupabase(): Promise<Jewelry[]> {
   const supabase = getReadClient();
   const { data, error } = await supabase
     .from("jewelry")
-    .select("id,title,description,image,price,created_at,sold")
+    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => mapRowToJewelry(r as JewelryRow));
@@ -93,11 +97,13 @@ export async function createJewelryInSupabase(j: Jewelry): Promise<Jewelry> {
     price: j.price,
     created_at: j.createdAt,
     sold: j.sold,
+    stock: j.stock ?? 1,
+    stripe_price_id: j.stripePriceId ?? null,
   };
   const { data, error } = await supabase
     .from("jewelry")
     .insert(payload)
-    .select("id,title,description,image,price,created_at,sold")
+    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
     .single();
   if (error) throw new Error(error.message);
   return mapRowToJewelry(data as JewelryRow);
@@ -112,12 +118,14 @@ export async function updateJewelryInSupabase(j: Jewelry): Promise<Jewelry> {
     price: j.price,
     created_at: j.createdAt,
     sold: j.sold,
+    stock: j.stock ?? 1,
+    stripe_price_id: j.stripePriceId ?? null,
   };
   const { data, error } = await supabase
     .from("jewelry")
     .update(payload)
     .eq("id", j.id)
-    .select("id,title,description,image,price,created_at,sold")
+    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
     .single();
   if (error) throw new Error(error.message);
   return mapRowToJewelry(data as JewelryRow);

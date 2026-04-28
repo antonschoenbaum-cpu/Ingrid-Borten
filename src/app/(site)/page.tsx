@@ -1,18 +1,20 @@
 import Link from "next/link";
 import { ArtworkImage } from "@/components/artwork-image";
+import { HeroBackground } from "@/components/HeroBackground";
 import { SoldPrice } from "@/components/SoldPrice";
 import {
   formatEventOpensDanish,
   formatEventUntilDanish,
   isEventPastByEndDate,
 } from "@/lib/format";
-import { getEvents, getJewelry, getPaintings } from "@/lib/data";
+import { getAbout, getEvents, getJewelry, getPaintings } from "@/lib/data";
 
 export default async function HomePage() {
-  const [paintings, jewelry, events] = await Promise.all([
+  const [paintings, jewelry, events, about] = await Promise.all([
     getPaintings(),
     getJewelry(),
     getEvents(),
+    getAbout(),
   ]);
 
   const recentPaintings = [...paintings]
@@ -27,32 +29,44 @@ export default async function HomePage() {
     .sort((a, b) => a.start_date.localeCompare(b.start_date))
     .slice(0, 2);
 
+  const heroImages = [
+    about.heroImage1,
+    about.heroImage2,
+    about.heroImage3,
+    about.heroImage4,
+    about.heroImage5,
+  ]
+    .map((v) => (typeof v === "string" ? v.trim() : ""))
+    .filter((v) => v.length > 0);
+
+  const heroTitle =
+    about.heroTitle?.trim() ||
+    "Penselstrøg og metal formet i takt med naturens stille fortællinger.";
+  const heroSubtitle =
+    about.heroSubtitle?.trim() ||
+    "Velkommen til et rum for maleri og smykker — håndværk med ro, varme og nordisk landskab i mindet.";
+  const heroDescription =
+    about.heroDescription?.trim() ||
+    "Ingrid Simmenæs Borten arbejder på grænsen mellem maleri og skulptur — fra olie på lærred til øreringe formet som små arkitektoniske former. Her møder du udvalgte værker og begivenheder.";
+
   return (
     <div>
-      <section className="relative min-h-[72vh] w-full">
-        <ArtworkImage
-          src="/uploads/hero-home.svg"
-          alt=""
-          className="absolute inset-0 h-full w-full object-cover"
-          priority
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-paper via-paper/40 to-transparent" />
+      <section className="relative min-h-[72vh] w-full overflow-hidden bg-paper-warm">
+        {heroImages.length > 0 ? <HeroBackground images={heroImages} /> : null}
+        <div className="absolute inset-0 bg-gradient-to-t from-paper via-paper/60 to-transparent" />
         <div className="relative mx-auto flex min-h-[72vh] max-w-6xl flex-col justify-end px-5 pb-16 pt-32 md:px-8 md:pb-24">
           <p className="max-w-xl font-serif text-3xl leading-tight text-ink md:text-4xl lg:text-[2.75rem]">
-            Penselstrøg og metal formet i takt med naturens stille fortællinger.
+            {heroTitle}
           </p>
           <p className="mt-6 max-w-lg text-lg text-ink-muted">
-            Velkommen til et rum for maleri og smykker — håndværk med ro, varme og
-            nordisk landskab i mindet.
+            {heroSubtitle}
           </p>
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-24">
         <p className="mx-auto max-w-3xl text-center text-lg leading-relaxed text-ink-muted">
-          Ingrid Simmenæs Borten arbejder på grænsen mellem maleri og skulptur — fra
-          olie på lærred til øreringe formet som små arkitektoniske former. Her møder
-          du udvalgte værker og begivenheder.
+          {heroDescription}
         </p>
       </section>
 

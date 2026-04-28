@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-type Folder = "paintings" | "jewelry" | "events" | "artist";
+type Folder = "paintings" | "jewelry" | "events" | "artist" | "hero";
 
 type Props = {
   folder: Folder;

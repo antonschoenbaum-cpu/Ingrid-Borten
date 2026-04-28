@@ -7,6 +7,10 @@ export type Painting = {
   createdAt: string;
   /** Om værket er solgt (JSON; ved Supabase-brug: boolean-kolonne `sold`). */
   sold: boolean;
+  /** Lagerbeholdning (webshop). */
+  stock?: number;
+  /** Stripe pris-id (webshop). */
+  stripePriceId?: string | null;
 };
 
 export type Jewelry = {
@@ -17,6 +21,8 @@ export type Jewelry = {
   description: string;
   createdAt: string;
   sold: boolean;
+  stock?: number;
+  stripePriceId?: string | null;
 };
 
 export type EventItem = {
@@ -42,6 +48,14 @@ export type AboutData = {
   artistPhoto: string;
   /** Bevares i JSON for bagudkompatibilitet; offentlig «Om» bruger begivenheder til udstillinger. */
   cvEntries: CvEntry[];
+  heroTitle?: string;
+  heroSubtitle?: string;
+  heroDescription?: string;
+  heroImage1?: string;
+  heroImage2?: string;
+  heroImage3?: string;
+  heroImage4?: string;
+  heroImage5?: string;
 };
 
 export type ContactLinks = {

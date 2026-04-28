@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { ArtworkImage } from "@/components/artwork-image";
 import { SoldPrice } from "@/components/SoldPrice";
 import { getPaintings } from "@/lib/data";
-import { readArtistSettings } from "@/lib/supabase-artist-settings";
+import { readArtistSettings } from "@/lib/webshop";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -18,11 +18,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function MaleriDetailPage({ params }: Props) {
   const { id } = await params;
-  const [items, artistSettings] = await Promise.all([getPaintings(), readArtistSettings()]);
+  const [items, artistSettings] = await Promise.all([getPaintings(), readArtistSettings(false)]);
   const item = items.find((p) => p.id === id);
   if (!item) notFound();
 
   const contactHref = `/kontakt?type=maleri&vare=${encodeURIComponent(item.title)}`;
+  const canBuy = artistSettings.paymentsEnabled && item.sold !== true && (item.stock ?? 1) > 0;
+  const isSold = item.sold === true || (item.stock ?? 1) <= 0;
+  const checkoutHref = `/checkout/paintings/${item.id}`;
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-16 md:px-8 md:py-20">
@@ -49,6 +52,16 @@ export default async function MaleriDetailPage({ params }: Props) {
           <p className="section-rule mt-8 border-secondary/40 pt-8 whitespace-pre-wrap leading-relaxed text-ink-muted">
             {item.description}
           </p>
+          {canBuy ? (
+            <Link href={checkoutHref} className="btn-outline-dark mt-10 inline-flex">
+              {`Køb nu — ${item.price.toLocaleString("da-DK")} kr.`}
+            </Link>
+          ) : null}
+          {isSold ? (
+            <span className="mt-10 inline-flex border border-accent/40 bg-paper px-4 py-2 text-sm uppercase tracking-wider text-accent">
+              Solgt
+            </span>
+          ) : null}
           {!artistSettings.paymentsEnabled ? (
             <Link
               href={contactHref}

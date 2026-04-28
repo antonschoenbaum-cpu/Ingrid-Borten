@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/require-admin";
 
-const allowedFolders = ["paintings", "jewelry", "events", "artist"] as const;
+const allowedFolders = ["paintings", "jewelry", "events", "artist", "hero"] as const;
 type Folder = (typeof allowedFolders)[number];
 
 function isFolder(s: string): s is Folder {
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const folderStr = typeof folderRaw === "string" ? folderRaw : "";
     if (!isFolder(folderStr)) {
       return NextResponse.json(
-        { error: "Ugyldig mappe. Brug paintings, jewelry, events eller artist." },
+        { error: "Ugyldig mappe. Brug paintings, jewelry, events, artist eller hero." },
         { status: 400 },
       );
     }

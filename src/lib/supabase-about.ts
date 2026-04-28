@@ -10,6 +10,14 @@ type AboutRow = {
   biography: string;
   artist_photo: string;
   cv_entries: unknown;
+  hero_title: string | null;
+  hero_subtitle: string | null;
+  hero_description: string | null;
+  hero_image_1: string | null;
+  hero_image_2: string | null;
+  hero_image_3: string | null;
+  hero_image_4: string | null;
+  hero_image_5: string | null;
 };
 
 function supabaseUrl(): string {
@@ -76,6 +84,14 @@ function mapRowToAbout(r: AboutRow): AboutData {
     biography: r.biography ?? "",
     artistPhoto: r.artist_photo ?? "",
     cvEntries: isCvEntries(cv) ? cv : [],
+    heroTitle: r.hero_title ?? "",
+    heroSubtitle: r.hero_subtitle ?? "",
+    heroDescription: r.hero_description ?? "",
+    heroImage1: r.hero_image_1 ?? "",
+    heroImage2: r.hero_image_2 ?? "",
+    heroImage3: r.hero_image_3 ?? "",
+    heroImage4: r.hero_image_4 ?? "",
+    heroImage5: r.hero_image_5 ?? "",
   };
 }
 
@@ -84,7 +100,9 @@ export async function readAboutFromSupabase(): Promise<AboutData | null> {
   const supabase = getReadClient();
   const { data, error } = await supabase
     .from("about_content")
-    .select("id,biography,artist_photo,cv_entries")
+    .select(
+      "id,biography,artist_photo,cv_entries,hero_title,hero_subtitle,hero_description,hero_image_1,hero_image_2,hero_image_3,hero_image_4,hero_image_5",
+    )
     .eq("id", "main")
     .maybeSingle();
   if (error) throw new Error(error.message);
@@ -99,11 +117,21 @@ export async function upsertAboutInSupabase(data: AboutData): Promise<AboutData>
     biography: data.biography,
     artist_photo: data.artistPhoto,
     cv_entries: data.cvEntries,
+    hero_title: data.heroTitle ?? "",
+    hero_subtitle: data.heroSubtitle ?? "",
+    hero_description: data.heroDescription ?? "",
+    hero_image_1: data.heroImage1 ?? "",
+    hero_image_2: data.heroImage2 ?? "",
+    hero_image_3: data.heroImage3 ?? "",
+    hero_image_4: data.heroImage4 ?? "",
+    hero_image_5: data.heroImage5 ?? "",
   };
   const { data: row, error } = await supabase
     .from("about_content")
     .upsert(payload, { onConflict: "id" })
-    .select("id,biography,artist_photo,cv_entries")
+    .select(
+      "id,biography,artist_photo,cv_entries,hero_title,hero_subtitle,hero_description,hero_image_1,hero_image_2,hero_image_3,hero_image_4,hero_image_5",
+    )
     .single();
   if (error) throw new Error(error.message);
   return mapRowToAbout(row as AboutRow);

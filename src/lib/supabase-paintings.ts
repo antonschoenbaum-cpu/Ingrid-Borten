@@ -9,6 +9,8 @@ type PaintingRow = {
   price: number;
   created_at: string;
   sold: boolean | null;
+  stock: number | null;
+  stripe_price_id: string | null;
 };
 
 function supabaseUrl(): string {
@@ -66,6 +68,8 @@ function mapRowToPainting(r: PaintingRow): Painting {
     price: Number(r.price),
     createdAt: String(r.created_at).slice(0, 10),
     sold: r.sold === true,
+    stock: Number.isFinite(Number(r.stock)) ? Number(r.stock) : 1,
+    stripePriceId: r.stripe_price_id ?? null,
   };
 }
 
@@ -73,7 +77,7 @@ export async function readPaintingsFromSupabase(): Promise<Painting[]> {
   const supabase = getReadClient();
   const { data, error } = await supabase
     .from("paintings")
-    .select("id,title,description,image,price,created_at,sold")
+    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => mapRowToPainting(r as PaintingRow));
@@ -89,11 +93,13 @@ export async function createPaintingInSupabase(p: Painting): Promise<Painting> {
     price: p.price,
     created_at: p.createdAt,
     sold: p.sold,
+    stock: p.stock ?? 1,
+    stripe_price_id: p.stripePriceId ?? null,
   };
   const { data, error } = await supabase
     .from("paintings")
     .insert(payload)
-    .select("id,title,description,image,price,created_at,sold")
+    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
     .single();
   if (error) throw new Error(error.message);
   return mapRowToPainting(data as PaintingRow);
@@ -108,12 +114,14 @@ export async function updatePaintingInSupabase(p: Painting): Promise<Painting> {
     price: p.price,
     created_at: p.createdAt,
     sold: p.sold,
+    stock: p.stock ?? 1,
+    stripe_price_id: p.stripePriceId ?? null,
   };
   const { data, error } = await supabase
     .from("paintings")
     .update(payload)
     .eq("id", p.id)
-    .select("id,title,description,image,price,created_at,sold")
+    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
     .single();
   if (error) throw new Error(error.message);
   return mapRowToPainting(data as PaintingRow);

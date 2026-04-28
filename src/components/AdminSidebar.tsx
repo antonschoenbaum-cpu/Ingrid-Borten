@@ -10,12 +10,14 @@ import {
   Home,
   ImageIcon,
   KeyRound,
+  PackageCheck,
   Palette,
   Settings,
   UserRound,
 } from "lucide-react";
 
 const links = [
+  { href: "/admin/forside", label: "Forside", icon: Home },
   { href: "/admin", label: "Oversigt", icon: Home },
   { href: "/admin/malerier", label: "Malerier", icon: Palette },
   { href: "/admin/smykker", label: "Smykker", icon: Gem },
@@ -23,6 +25,7 @@ const links = [
   { href: "/admin/om", label: "Om kunstneren", icon: UserRound },
   { href: "/admin/kontakt", label: "Sociale medier", icon: Settings },
   { href: "/admin/betaling", label: "Betaling", icon: CreditCard },
+  { href: "/admin/ordrer", label: "Ordrer", icon: PackageCheck },
   { href: "/admin/indstillinger", label: "Indstillinger", icon: KeyRound },
 ];
 

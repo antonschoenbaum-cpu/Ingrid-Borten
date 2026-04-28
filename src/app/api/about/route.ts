@@ -68,9 +68,26 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Ugyldig JSON" }, { status: 400 });
   }
 
-  const biography = String(body.biography ?? "").trim();
-  const artistPhoto = String(body.artistPhoto ?? "").trim();
   const prev = await readAboutForAdmin();
+  const biography =
+    typeof body.biography === "string" ? body.biography.trim() : prev.biography;
+  const artistPhoto =
+    typeof body.artistPhoto === "string" ? body.artistPhoto.trim() : prev.artistPhoto;
+  const heroTitle =
+    typeof body.heroTitle === "string" ? body.heroTitle.trim().slice(0, 120) : (prev.heroTitle ?? "");
+  const heroSubtitle =
+    typeof body.heroSubtitle === "string"
+      ? body.heroSubtitle.trim().slice(0, 160)
+      : (prev.heroSubtitle ?? "");
+  const heroDescription =
+    typeof body.heroDescription === "string"
+      ? body.heroDescription.trim().slice(0, 300)
+      : (prev.heroDescription ?? "");
+  const heroImage1 = typeof body.heroImage1 === "string" ? body.heroImage1.trim() : (prev.heroImage1 ?? "");
+  const heroImage2 = typeof body.heroImage2 === "string" ? body.heroImage2.trim() : (prev.heroImage2 ?? "");
+  const heroImage3 = typeof body.heroImage3 === "string" ? body.heroImage3.trim() : (prev.heroImage3 ?? "");
+  const heroImage4 = typeof body.heroImage4 === "string" ? body.heroImage4.trim() : (prev.heroImage4 ?? "");
+  const heroImage5 = typeof body.heroImage5 === "string" ? body.heroImage5.trim() : (prev.heroImage5 ?? "");
   const cvEntriesRaw = body.cvEntries;
   const cvEntries: CvEntry[] = isCvEntries(cvEntriesRaw)
     ? cvEntriesRaw
@@ -89,6 +106,14 @@ export async function PUT(req: NextRequest) {
     biography,
     artistPhoto,
     cvEntries,
+    heroTitle,
+    heroSubtitle,
+    heroDescription,
+    heroImage1,
+    heroImage2,
+    heroImage3,
+    heroImage4,
+    heroImage5,
   };
 
   try {
