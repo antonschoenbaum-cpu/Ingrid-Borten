@@ -1,56 +1,39 @@
-import Link from "next/link";
 import { UploadWidget } from "./upload-widget";
+import { getJewelry, getPaintings } from "@/lib/data";
+import { listOrders } from "@/lib/orders";
 
-const cards = [
-  {
-    href: "/admin/malerier",
-    title: "Malerier",
-    text: "Tilføj, rediger og slet malerier og billeder.",
-  },
-  {
-    href: "/admin/smykker",
-    title: "Smykker",
-    text: "Administrer smykker og upload til jewelry-mappen.",
-  },
-  {
-    href: "/admin/begivenheder",
-    title: "Begivenheder",
-    text: "Kommende og tidligere begivenheder med valgfrit billede.",
-  },
-  {
-    href: "/admin/om",
-    title: "Om kunstneren",
-    text: "Biografi og portrætfoto; udstillinger hentes fra begivenheder.",
-  },
-  {
-    href: "/admin/kontakt",
-    title: "Sociale medier",
-    text: "Facebook- og Instagram-links på kontaktsiden.",
-  },
-];
+export default async function AdminHomePage() {
+  const artistName = (process.env.ARTIST_NAME ?? "kunstner").trim() || "kunstner";
 
-export default function AdminHomePage() {
+  const [paintings, jewelry, pendingOrdersCount] = await Promise.all([
+    getPaintings().catch(() => []),
+    getJewelry().catch(() => []),
+    listOrders()
+      .then((orders) => orders.filter((o) => o.status === "paid").length)
+      .catch(() => 0),
+  ]);
+
   return (
     <div>
-      <h1 className="font-serif text-3xl text-ink">Administration</h1>
+      <h1 className="font-serif text-3xl text-ink">{`God dag, ${artistName}`}</h1>
       <p className="mt-3 max-w-xl text-sm text-ink-muted">
-        Alt indhold gemmes automatisk.
+        Her er et hurtigt overblik over din side.
       </p>
 
-      <ul className="mt-12 grid gap-6 sm:grid-cols-2">
-        {cards.map((c) => (
-          <li key={c.href}>
-            <Link
-              href={c.href}
-              className="block h-full border border-secondary/50 bg-paper-warm/40 p-6 transition hover:border-accent/40 hover:shadow-sm"
-            >
-              <h2 className="font-serif text-xl text-ink">{c.title}</h2>
-              <p className="mt-2 text-sm text-ink-muted">{c.text}</p>
-              <span className="btn-outline mt-4 inline-flex text-[11px]">Åbn</span>
-            </Link>
-          </li>
-        ))}
-      </ul>
+      <div className="mt-10 grid gap-4 md:grid-cols-3">
+        <article className="rounded border border-secondary/50 bg-paper-warm/40 p-5">
+          <p className="text-sm text-ink-muted">Malerier</p>
+          <p className="mt-2 font-serif text-3xl text-ink">{paintings.length}</p>
+        </article>
+        <article className="rounded border border-secondary/50 bg-paper-warm/40 p-5">
+          <p className="text-sm text-ink-muted">Smykker</p>
+          <p className="mt-2 font-serif text-3xl text-ink">{jewelry.length}</p>
+        </article>
+        <article className="rounded border border-secondary/50 bg-paper-warm/40 p-5">
+          <p className="text-sm text-ink-muted">Ordrer (ubehandlede)</p>
+          <p className="mt-2 font-serif text-3xl text-ink">{pendingOrdersCount}</p>
+        </article>
+      </div>
 
       <section className="section-rule mt-16 border-dashed pt-16">
         <h2 className="font-serif text-xl text-ink">Hurtig upload</h2>
