@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { getAbout } from "@/lib/data";
+import { toMetaDescription } from "@/lib/seo";
 import "./globals.css";
 
 const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
@@ -17,13 +19,23 @@ const inter = Inter({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: `${artistName} · Malerier og smykker`,
-    template: `%s · ${artistName}`,
-  },
-  description: `${artistName}: ekspressive malerier og håndlavede smykker med nordisk ro.`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const about = await getAbout();
+  return {
+    title: {
+      default: artistName,
+      template: `%s — ${artistName}`,
+    },
+    description: toMetaDescription(about.heroDescription, 160),
+    openGraph: {
+      type: "website",
+    },
+    robots: {
+      index: true,
+      follow: true,
+    },
+  };
+}
 
 export default function RootLayout({
   children,

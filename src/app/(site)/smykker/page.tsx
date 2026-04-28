@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { GalleryGrid } from "@/components/GalleryGrid";
 import { getJewelry } from "@/lib/data";
+const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
 
 export const metadata: Metadata = {
-  title: "Smykker",
+  title: { absolute: `Smykker — ${artistName}` },
+  description: `Se alle smykker og håndlavede æringe af ${artistName}`,
 };
 
 export default async function JewelryPage() {

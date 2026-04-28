@@ -4,6 +4,7 @@ export type Painting = {
   price: number;
   image: string;
   description: string;
+  seoDescription?: string | null;
   createdAt: string;
   /** Om værket er solgt (JSON; ved Supabase-brug: boolean-kolonne `sold`). */
   sold: boolean;
@@ -19,6 +20,7 @@ export type Jewelry = {
   price: number;
   image: string;
   description: string;
+  seoDescription?: string | null;
   createdAt: string;
   sold: boolean;
   stock?: number;

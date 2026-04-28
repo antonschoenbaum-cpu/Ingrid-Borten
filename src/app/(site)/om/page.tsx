@@ -3,12 +3,17 @@ import Link from "next/link";
 import { ArtworkImage } from "@/components/artwork-image";
 import { formatPastEventCvLine, isEventPastByEndDate } from "@/lib/format";
 import { getAbout, getEvents } from "@/lib/data";
+import { toMetaDescription } from "@/lib/seo";
 
 const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
 
-export const metadata: Metadata = {
-  title: `Om ${artistName}`,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const about = await getAbout();
+  return {
+    title: { absolute: `Om ${artistName}` },
+    description: toMetaDescription(about.heroDescription, 160),
+  };
+}
 
 const quickNav = [
   { href: "#biografi", label: "Biografi" },
@@ -18,12 +23,24 @@ const quickNav = [
 
 export default async function OmPage() {
   const [about, events] = await Promise.all([getAbout(), getEvents()]);
+  const personSchema = {
+    "@context": "https://schema.org",
+    "@type": "Person",
+    name: artistName,
+    description: about.biography,
+    image: about.artistPhoto,
+    jobTitle: "Kunstner",
+  };
   const pastExhibitions = events
     .filter((e) => isEventPastByEndDate(e.end_date))
     .sort((a, b) => b.end_date.localeCompare(a.end_date));
 
   return (
     <article>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(personSchema) }}
+      />
       <header className="relative h-[min(55vh,520px)] w-full overflow-hidden">
         <ArtworkImage
           src="/uploads/about-header.svg"

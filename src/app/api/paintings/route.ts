@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { slugIdFromTitle } from "@/lib/ids";
+import { generateSeoDescription } from "@/lib/seo";
 import { requireAdmin } from "@/lib/require-admin";
 import {
   readPaintings,
@@ -74,11 +75,13 @@ export async function POST(req: NextRequest) {
     }
 
     const sold = typeof body.sold === "boolean" ? body.sold : false;
+    const seoDescription = await generateSeoDescription(title, description, "maleri");
 
     const painting: Painting = {
       id,
       title,
       description,
+      seoDescription,
       image,
       price,
       createdAt,

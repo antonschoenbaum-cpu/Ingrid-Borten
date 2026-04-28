@@ -3,12 +3,12 @@ import { ContactSection } from "./contact-section";
 import { getContactLinks } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
+const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
 
 export const metadata: Metadata = {
-  title: "Kontakt",
+  title: { absolute: `Kontakt — ${artistName}` },
+  description: `Tag kontakt til ${artistName}`,
 };
-
-const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
 const email = process.env.CONTACT_EMAIL ?? "ingrid@example.com";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;

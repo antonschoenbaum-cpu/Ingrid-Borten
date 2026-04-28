@@ -5,6 +5,7 @@ type PaintingRow = {
   id: string;
   title: string;
   description: string;
+  seo_description: string | null;
   image: string;
   price: number;
   created_at: string;
@@ -64,6 +65,7 @@ function mapRowToPainting(r: PaintingRow): Painting {
     id: r.id,
     title: r.title,
     description: r.description,
+    seoDescription: r.seo_description,
     image: r.image,
     price: Number(r.price),
     createdAt: String(r.created_at).slice(0, 10),
@@ -77,7 +79,7 @@ export async function readPaintingsFromSupabase(): Promise<Painting[]> {
   const supabase = getReadClient();
   const { data, error } = await supabase
     .from("paintings")
-    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
+    .select("id,title,description,seo_description,image,price,created_at,sold,stock,stripe_price_id")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => mapRowToPainting(r as PaintingRow));
@@ -89,6 +91,7 @@ export async function createPaintingInSupabase(p: Painting): Promise<Painting> {
     id: p.id,
     title: p.title,
     description: p.description,
+    seo_description: p.seoDescription ?? null,
     image: p.image,
     price: p.price,
     created_at: p.createdAt,
@@ -99,7 +102,7 @@ export async function createPaintingInSupabase(p: Painting): Promise<Painting> {
   const { data, error } = await supabase
     .from("paintings")
     .insert(payload)
-    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
+    .select("id,title,description,seo_description,image,price,created_at,sold,stock,stripe_price_id")
     .single();
   if (error) throw new Error(error.message);
   return mapRowToPainting(data as PaintingRow);
@@ -110,6 +113,7 @@ export async function updatePaintingInSupabase(p: Painting): Promise<Painting> {
   const payload = {
     title: p.title,
     description: p.description,
+    seo_description: p.seoDescription ?? null,
     image: p.image,
     price: p.price,
     created_at: p.createdAt,
@@ -121,7 +125,7 @@ export async function updatePaintingInSupabase(p: Painting): Promise<Painting> {
     .from("paintings")
     .update(payload)
     .eq("id", p.id)
-    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
+    .select("id,title,description,seo_description,image,price,created_at,sold,stock,stripe_price_id")
     .single();
   if (error) throw new Error(error.message);
   return mapRowToPainting(data as PaintingRow);
@@ -131,5 +135,9 @@ export async function deletePaintingInSupabase(id: string): Promise<void> {
   const supabase = getWriteClient();
   const { error } = await supabase.from("paintings").delete().eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+export async function getPaintings(): Promise<Painting[]> {
+  return readPaintingsFromSupabase();
 }
 

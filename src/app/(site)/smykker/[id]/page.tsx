@@ -4,16 +4,29 @@ import { notFound } from "next/navigation";
 import { ArtworkImage } from "@/components/artwork-image";
 import { SoldPrice } from "@/components/SoldPrice";
 import { getJewelry } from "@/lib/data";
+import { toMetaDescription } from "@/lib/seo";
 import { readArtistSettings } from "@/lib/webshop";
 
 type Props = { params: Promise<{ id: string }> };
+const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const items = await getJewelry();
   const item = items.find((p) => p.id === id);
-  if (!item) return { title: "Smykke" };
-  return { title: item.title };
+  if (!item) return { title: `Smykke — ${artistName}` };
+  const title = `${item.title} — ${artistName}`;
+  const description = toMetaDescription(item.seoDescription ?? item.description, 160);
+  return {
+    title: { absolute: title },
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [item.image],
+      type: "website",
+    },
+  };
 }
 
 export default async function SmykkeDetailPage({ params }: Props) {
@@ -26,9 +39,30 @@ export default async function SmykkeDetailPage({ params }: Props) {
   const canBuy = artistSettings.paymentsEnabled && item.sold !== true && (item.stock ?? 1) > 0;
   const isSold = item.sold === true || (item.stock ?? 1) <= 0;
   const checkoutHref = `/checkout/jewelry/${item.id}`;
+  const productSchema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: item.title,
+    description: item.description,
+    image: item.image,
+    offers: {
+      "@type": "Offer",
+      price: String(item.price),
+      priceCurrency: "DKK",
+      availability: isSold ? "https://schema.org/SoldOut" : "https://schema.org/InStock",
+    },
+    brand: {
+      "@type": "Person",
+      name: artistName,
+    },
+  };
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-16 md:px-8 md:py-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
       <Link
         href="/smykker"
         className="text-sm uppercase tracking-wider text-ink-muted transition hover:text-ink"

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { GalleryGrid } from "@/components/GalleryGrid";
 import { getPaintings } from "@/lib/data";
+const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
 
 export const metadata: Metadata = {
-  title: "Malerier",
+  title: { absolute: `Malerier — ${artistName}` },
+  description: `Se alle malerier af ${artistName}`,
 };
 
 export default async function PaintingsPage() {

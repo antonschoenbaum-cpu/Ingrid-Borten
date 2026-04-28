@@ -7,9 +7,11 @@ import {
   isEventPastByEndDate,
 } from "@/lib/format";
 import { getEvents } from "@/lib/data";
+const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
 
 export const metadata: Metadata = {
-  title: "Begivenheder",
+  title: { absolute: `Begivenheder — ${artistName}` },
+  description: "Kommende og tidligere udstillinger og begivenheder",
 };
 
 export default async function EventsPage() {

@@ -9,6 +9,7 @@ type JewelryRow = {
   id: string;
   title: string;
   description: string;
+  seo_description: string | null;
   image: string;
   price: number;
   created_at: string;
@@ -68,6 +69,7 @@ function mapRowToJewelry(r: JewelryRow): Jewelry {
     id: r.id,
     title: r.title,
     description: r.description,
+    seoDescription: r.seo_description,
     image: r.image,
     price: Number(r.price),
     createdAt: String(r.created_at).slice(0, 10),
@@ -81,7 +83,7 @@ export async function readJewelryFromSupabase(): Promise<Jewelry[]> {
   const supabase = getReadClient();
   const { data, error } = await supabase
     .from("jewelry")
-    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
+    .select("id,title,description,seo_description,image,price,created_at,sold,stock,stripe_price_id")
     .order("created_at", { ascending: false });
   if (error) throw new Error(error.message);
   return (data ?? []).map((r) => mapRowToJewelry(r as JewelryRow));
@@ -93,6 +95,7 @@ export async function createJewelryInSupabase(j: Jewelry): Promise<Jewelry> {
     id: j.id,
     title: j.title,
     description: j.description,
+    seo_description: j.seoDescription ?? null,
     image: j.image,
     price: j.price,
     created_at: j.createdAt,
@@ -103,7 +106,7 @@ export async function createJewelryInSupabase(j: Jewelry): Promise<Jewelry> {
   const { data, error } = await supabase
     .from("jewelry")
     .insert(payload)
-    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
+    .select("id,title,description,seo_description,image,price,created_at,sold,stock,stripe_price_id")
     .single();
   if (error) throw new Error(error.message);
   return mapRowToJewelry(data as JewelryRow);
@@ -114,6 +117,7 @@ export async function updateJewelryInSupabase(j: Jewelry): Promise<Jewelry> {
   const payload = {
     title: j.title,
     description: j.description,
+    seo_description: j.seoDescription ?? null,
     image: j.image,
     price: j.price,
     created_at: j.createdAt,
@@ -125,7 +129,7 @@ export async function updateJewelryInSupabase(j: Jewelry): Promise<Jewelry> {
     .from("jewelry")
     .update(payload)
     .eq("id", j.id)
-    .select("id,title,description,image,price,created_at,sold,stock,stripe_price_id")
+    .select("id,title,description,seo_description,image,price,created_at,sold,stock,stripe_price_id")
     .single();
   if (error) throw new Error(error.message);
   return mapRowToJewelry(data as JewelryRow);
@@ -135,4 +139,8 @@ export async function deleteJewelryInSupabase(id: string): Promise<void> {
   const supabase = getWriteClient();
   const { error } = await supabase.from("jewelry").delete().eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+export async function getJewelry(): Promise<Jewelry[]> {
+  return readJewelryFromSupabase();
 }
