@@ -4,6 +4,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { generateAndStoreBackgroundColorFromGallery } from "@/lib/colors";
 import { requireAdmin } from "@/lib/require-admin";
 import { generateSeoDescription } from "@/lib/seo";
 import {
@@ -96,6 +97,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   try {
     if (canUseSupabaseJewelryWrite()) {
       const saved = await updateJewelryInSupabase(updated);
+      void generateAndStoreBackgroundColorFromGallery().catch(() => {});
       revalidatePublicContent();
       revalidatePath(`/smykker/${id}`);
       return NextResponse.json(saved);

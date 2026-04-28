@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { generateAndStoreBackgroundColorFromAboutAndPaintings } from "@/lib/colors";
 import { requireAdmin } from "@/lib/require-admin";
 import { readAbout, revalidateAboutPaths, writeAbout } from "@/lib/store";
 import {
@@ -88,6 +89,12 @@ export async function PUT(req: NextRequest) {
   const heroImage3 = typeof body.heroImage3 === "string" ? body.heroImage3.trim() : (prev.heroImage3 ?? "");
   const heroImage4 = typeof body.heroImage4 === "string" ? body.heroImage4.trim() : (prev.heroImage4 ?? "");
   const heroImage5 = typeof body.heroImage5 === "string" ? body.heroImage5.trim() : (prev.heroImage5 ?? "");
+  const heroImagesChanged =
+    heroImage1 !== (prev.heroImage1 ?? "") ||
+    heroImage2 !== (prev.heroImage2 ?? "") ||
+    heroImage3 !== (prev.heroImage3 ?? "") ||
+    heroImage4 !== (prev.heroImage4 ?? "") ||
+    heroImage5 !== (prev.heroImage5 ?? "");
   const cvEntriesRaw = body.cvEntries;
   const cvEntries: CvEntry[] = isCvEntries(cvEntriesRaw)
     ? cvEntriesRaw
@@ -119,6 +126,15 @@ export async function PUT(req: NextRequest) {
   try {
     if (canUseSupabaseAboutWrite()) {
       const saved = await upsertAboutInSupabase(data);
+      if (heroImagesChanged) {
+        void generateAndStoreBackgroundColorFromAboutAndPaintings([
+          heroImage1,
+          heroImage2,
+          heroImage3,
+          heroImage4,
+          heroImage5,
+        ]).catch(() => {});
+      }
       revalidateAboutPaths();
       return NextResponse.json(saved);
     }

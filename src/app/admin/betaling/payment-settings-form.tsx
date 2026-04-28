@@ -28,6 +28,11 @@ export function PaymentSettingsForm() {
   const [toggleMsg, setToggleMsg] = useState<string | null>(null);
   const [paymentMsg, setPaymentMsg] = useState<string | null>(null);
   const [addressMsg, setAddressMsg] = useState<string | null>(null);
+  const [bgColor, setBgColor] = useState("#F5F0EB");
+  const [bgColorPending, setBgColorPending] = useState(false);
+  const [bgColorGeneratePending, setBgColorGeneratePending] = useState(false);
+  const [bgColorMsg, setBgColorMsg] = useState<string | null>(null);
+  const [bgColorError, setBgColorError] = useState<string | null>(null);
   const [toggleError, setToggleError] = useState<string | null>(null);
   const [paymentError, setPaymentError] = useState<string | null>(null);
   const [addressError, setAddressError] = useState<string | null>(null);
@@ -35,9 +40,12 @@ export function PaymentSettingsForm() {
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/admin/stripe-connect", { cache: "no-store" });
-        if (!res.ok) return;
-        const data = (await res.json()) as SettingsResponse;
+        const [settingsRes, colorRes] = await Promise.all([
+          fetch("/api/admin/stripe-connect", { cache: "no-store" }),
+          fetch("/api/admin/bg-color", { cache: "no-store" }),
+        ]);
+        if (!settingsRes.ok) return;
+        const data = (await settingsRes.json()) as SettingsResponse;
         setPaymentsEnabled(data.paymentsEnabled === true);
         setRegNumber(data.bankRegNumber ?? "");
         setAccountNumber(data.bankAccountNumber ?? "");
@@ -45,6 +53,10 @@ export function PaymentSettingsForm() {
         setArtistZip(data.artistZip ?? "");
         setArtistCity(data.artistCity ?? "");
         setStripeAccountId(data.stripeAccountId ?? null);
+        if (colorRes.ok) {
+          const colorData = (await colorRes.json()) as { bgColor?: string };
+          if (typeof colorData.bgColor === "string") setBgColor(colorData.bgColor);
+        }
       } catch {
         // Ignoreres i UI.
       }
@@ -125,6 +137,52 @@ export function PaymentSettingsForm() {
       setAddressError("Kunne ikke gemme afsenderadresse.");
     } finally {
       setAddressPending(false);
+    }
+  }
+
+  async function saveBgColor() {
+    setBgColorPending(true);
+    setBgColorMsg(null);
+    setBgColorError(null);
+    try {
+      const res = await fetch("/api/admin/bg-color", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bgColor }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { bgColor?: string; error?: string };
+      if (!res.ok) {
+        setBgColorError(data.error ?? "Kunne ikke gemme baggrundsfarve.");
+        return;
+      }
+      if (typeof data.bgColor === "string") setBgColor(data.bgColor);
+      setBgColorMsg("Baggrundsfarve gemt.");
+    } catch {
+      setBgColorError("Kunne ikke gemme baggrundsfarve.");
+    } finally {
+      setBgColorPending(false);
+    }
+  }
+
+  async function generateBgColor() {
+    setBgColorGeneratePending(true);
+    setBgColorMsg(null);
+    setBgColorError(null);
+    try {
+      const res = await fetch("/api/admin/bg-color/generate", {
+        method: "POST",
+      });
+      const data = (await res.json().catch(() => ({}))) as { bgColor?: string; error?: string };
+      if (!res.ok) {
+        setBgColorError(data.error ?? "Kunne ikke generere baggrundsfarve.");
+        return;
+      }
+      if (typeof data.bgColor === "string") setBgColor(data.bgColor);
+      setBgColorMsg("AI valgte en ny baggrundsfarve.");
+    } catch {
+      setBgColorError("Kunne ikke generere baggrundsfarve.");
+    } finally {
+      setBgColorGeneratePending(false);
     }
   }
 
@@ -254,6 +312,48 @@ export function PaymentSettingsForm() {
         </form>
         {addressMsg ? <p className="mt-3 text-sm text-accent">{addressMsg}</p> : null}
         {addressError ? <p className="mt-3 text-sm text-rose-dust">{addressError}</p> : null}
+      </section>
+
+      <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">
+        <h2 className="font-serif text-xl text-ink">Baggrundsfarve</h2>
+        <p className="mt-2 text-sm text-ink-muted">
+          Din sides baggrundsfarve vælges automatisk ud fra dine værker. Du kan også vælge selv.
+        </p>
+        <div className="mt-5 flex items-center gap-4">
+          <span
+            className="inline-block size-10 rounded border border-secondary/70"
+            style={{ backgroundColor: bgColor }}
+            aria-hidden
+          />
+          <input
+            type="color"
+            value={bgColor}
+            onChange={(e) => setBgColor(e.target.value)}
+            className="h-10 w-16 cursor-pointer rounded border border-secondary/60 bg-paper p-1"
+            aria-label="Vælg baggrundsfarve"
+          />
+          <span className="text-sm text-ink-muted">{bgColor.toUpperCase()}</span>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-3">
+          <button
+            type="button"
+            className="btn-outline"
+            onClick={() => void saveBgColor()}
+            disabled={bgColorPending}
+          >
+            {bgColorPending ? "Gemmer..." : "Gem min farve"}
+          </button>
+          <button
+            type="button"
+            className="btn-outline-dark"
+            onClick={() => void generateBgColor()}
+            disabled={bgColorGeneratePending}
+          >
+            {bgColorGeneratePending ? "Analyserer..." : "Lad AI vælge"}
+          </button>
+        </div>
+        {bgColorMsg ? <p className="mt-3 text-sm text-accent">{bgColorMsg}</p> : null}
+        {bgColorError ? <p className="mt-3 text-sm text-rose-dust">{bgColorError}</p> : null}
       </section>
     </div>
   );

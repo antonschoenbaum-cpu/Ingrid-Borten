@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
+import type { CSSProperties } from "react";
 import { Providers } from "@/components/providers";
+import { getStoredBackgroundColor } from "@/lib/colors";
 import { getAbout } from "@/lib/data";
 import { toMetaDescription } from "@/lib/seo";
 import "./globals.css";
@@ -37,17 +39,21 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const bgColor = await getStoredBackgroundColor();
   return (
     <html
       lang="da"
       className={`${playfair.variable} ${inter.variable} h-full scroll-smooth`}
     >
-      <body className={`min-h-full antialiased ${inter.className}`}>
+      <body
+        className={`min-h-full antialiased ${inter.className}`}
+        style={{ "--bg-color": bgColor } as CSSProperties}
+      >
         <Providers>{children}</Providers>
       </body>
     </html>

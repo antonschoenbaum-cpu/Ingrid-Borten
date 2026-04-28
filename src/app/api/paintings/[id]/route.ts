@@ -4,6 +4,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
+import { generateAndStoreBackgroundColorFromGallery } from "@/lib/colors";
 import { requireAdmin } from "@/lib/require-admin";
 import { generateSeoDescription } from "@/lib/seo";
 import {
@@ -95,6 +96,7 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     };
     if (canUseSupabaseWrite()) {
       const saved = await updatePaintingInSupabase(updated);
+      void generateAndStoreBackgroundColorFromGallery().catch(() => {});
       revalidatePublicContent();
       revalidatePath(`/malerier/${id}`);
       return NextResponse.json(saved);

@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { slugIdFromTitle } from "@/lib/ids";
+import { generateAndStoreBackgroundColorFromGallery } from "@/lib/colors";
 import { generateSeoDescription } from "@/lib/seo";
 import { requireAdmin } from "@/lib/require-admin";
 import {
@@ -90,6 +91,7 @@ export async function POST(req: NextRequest) {
 
     if (canUseSupabaseJewelryWrite()) {
       const inserted = await createJewelryInSupabase(jewelry);
+      void generateAndStoreBackgroundColorFromGallery().catch(() => {});
       revalidatePublicContent();
       revalidatePath(`/smykker/${id}`);
       return NextResponse.json(inserted);

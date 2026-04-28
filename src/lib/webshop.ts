@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { normalizeHexColor } from "@/lib/colors";
 
 export type ProductType = "paintings" | "jewelry";
 
@@ -24,6 +25,7 @@ export type ArtistSettings = {
   artistAddress: string;
   artistZip: string;
   artistCity: string;
+  bgColor: string;
 };
 
 function supabaseUrl(): string {
@@ -90,11 +92,12 @@ export async function readArtistSettings(useService = false): Promise<ArtistSett
     artistAddress: "",
     artistZip: "",
     artistCity: "",
+    bgColor: "#F5F0EB",
   };
   const { data, error } = await supabase
     .from("artist_settings")
     .select(
-      "payments_enabled,stripe_account_id,bank_reg_number,bank_account_number,onboarding_complete,shipmondo_api_user,shipmondo_api_key,artist_address,artist_zip,artist_city",
+      "payments_enabled,stripe_account_id,bank_reg_number,bank_account_number,onboarding_complete,shipmondo_api_user,shipmondo_api_key,artist_address,artist_zip,artist_city,bg_color",
     )
     .eq("id", "main")
     .maybeSingle();
@@ -114,6 +117,7 @@ export async function readArtistSettings(useService = false): Promise<ArtistSett
     artistAddress: (data.artist_address as string | null | undefined) ?? "",
     artistZip: (data.artist_zip as string | null | undefined) ?? "",
     artistCity: (data.artist_city as string | null | undefined) ?? "",
+    bgColor: normalizeHexColor((data.bg_color as string | null | undefined) ?? "#F5F0EB"),
   };
 }
 
