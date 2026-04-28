@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ArtworkImage } from "@/components/artwork-image";
 import { SoldPrice } from "@/components/SoldPrice";
 import { getJewelry } from "@/lib/data";
+import { readArtistSettings } from "@/lib/supabase-artist-settings";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SmykkeDetailPage({ params }: Props) {
   const { id } = await params;
-  const items = await getJewelry();
+  const [items, artistSettings] = await Promise.all([getJewelry(), readArtistSettings()]);
   const item = items.find((p) => p.id === id);
   if (!item) notFound();
 
@@ -40,9 +41,14 @@ export default async function SmykkeDetailPage({ params }: Props) {
           <p className="section-rule mt-8 border-secondary/40 pt-8 whitespace-pre-wrap leading-relaxed text-ink-muted">
             {item.description}
           </p>
-          <Link href={contactHref} className="btn-outline mt-10 inline-flex">
-            Forespørg om dette smykke
-          </Link>
+          {!artistSettings.paymentsEnabled ? (
+            <Link
+              href={contactHref}
+              className="mt-10 inline-flex text-sm text-ink-muted underline underline-offset-4 transition hover:text-ink"
+            >
+              Forespørg om dette værk
+            </Link>
+          ) : null}
         </div>
         <div className="order-1 overflow-hidden border border-secondary/50 bg-paper-warm md:order-2">
           <ArtworkImage

@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import {
   CalendarDays,
+  CreditCard,
   Gem,
   Home,
   ImageIcon,
@@ -21,6 +22,7 @@ const links = [
   { href: "/admin/begivenheder", label: "Begivenheder", icon: CalendarDays },
   { href: "/admin/om", label: "Om kunstneren", icon: UserRound },
   { href: "/admin/kontakt", label: "Sociale medier", icon: Settings },
+  { href: "/admin/betaling", label: "Betaling", icon: CreditCard },
   { href: "/admin/indstillinger", label: "Indstillinger", icon: KeyRound },
 ];
 
