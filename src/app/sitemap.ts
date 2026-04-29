@@ -1,15 +1,13 @@
 import { MetadataRoute } from "next";
 import { getPaintings } from "@/lib/supabase-paintings";
 import { getJewelry } from "@/lib/supabase-jewelry";
-import { getEvents } from "@/lib/supabase-events";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://ingrid-borten.vercel.app";
 
-  const [paintings, jewelry, events] = await Promise.all([
+  const [paintings, jewelry] = await Promise.all([
     getPaintings().catch(() => []),
     getJewelry().catch(() => []),
-    getEvents().catch(() => []),
   ]);
 
   const paintingUrls = paintings.map((p) => ({
@@ -24,13 +22,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: new Date(j.createdAt),
     changeFrequency: "monthly" as const,
     priority: 0.8,
-  }));
-
-  const eventUrls = events.map((e) => ({
-    url: `${baseUrl}/begivenheder`,
-    lastModified: new Date(e.start_date),
-    changeFrequency: "weekly" as const,
-    priority: 0.6,
   }));
 
   return [
@@ -72,6 +63,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     ...paintingUrls,
     ...jewelryUrls,
-    ...eventUrls,
   ];
 }

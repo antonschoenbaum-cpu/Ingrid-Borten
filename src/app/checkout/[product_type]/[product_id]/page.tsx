@@ -1,7 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { readArtistSettings, readProductById, type ProductType } from "@/lib/webshop";
 import { CheckoutClient } from "./checkout-client";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 type Props = { params: Promise<{ product_type: string; product_id: string }> };
 

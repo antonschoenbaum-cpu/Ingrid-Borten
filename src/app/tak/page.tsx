@@ -1,4 +1,9 @@
+import type { Metadata } from "next";
 import Stripe from "stripe";
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

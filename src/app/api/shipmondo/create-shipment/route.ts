@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createShipmentForOrder } from "@/lib/shipmondo";
+import { requireAdmin } from "@/lib/require-admin";
 
 type Body = { order_id?: unknown };
 
 export async function POST(req: NextRequest) {
+  const denied = await requireAdmin();
+  if (denied) return denied;
+
   let body: Body;
   try {
     body = (await req.json()) as Body;

@@ -68,10 +68,20 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
     typeof body.createdAt === "string" ? body.createdAt : items[idx].createdAt;
   const sold =
     typeof body.sold === "boolean" ? body.sold : (items[idx].sold ?? false);
-  const seoDescription =
-    typeof body.seoDescription === "string"
-      ? body.seoDescription
-      : await generateSeoDescription(title, description, "maleri");
+
+  const prev = items[idx];
+  let seoDescription: string | null | undefined;
+  if (typeof body.seoDescription === "string") {
+    seoDescription = body.seoDescription;
+  } else {
+    const titleChanged = title !== prev.title;
+    const descriptionChanged = description !== prev.description;
+    if (titleChanged || descriptionChanged) {
+      seoDescription = await generateSeoDescription(title, description, "maleri");
+    } else {
+      seoDescription = prev.seoDescription ?? null;
+    }
+  }
 
   if (!title) {
     return NextResponse.json({ error: "Titel påkrævet" }, { status: 400 });

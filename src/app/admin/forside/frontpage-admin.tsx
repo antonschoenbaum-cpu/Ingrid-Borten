@@ -9,15 +9,52 @@ type Props = { initial: AboutData };
 
 type AboutResponse = AboutData & { error?: string };
 
+const MAX_HERO_IMAGES = 5;
+
+function slotsFromAbout(a: AboutData): string[] {
+  return [
+    (a.heroImage1 ?? "").trim(),
+    (a.heroImage2 ?? "").trim(),
+    (a.heroImage3 ?? "").trim(),
+    (a.heroImage4 ?? "").trim(),
+    (a.heroImage5 ?? "").trim(),
+  ];
+}
+
+/** Fjern tomme huller — billederne ligger altid i 1..n. */
+function packSlots(slots: string[]): string[] {
+  const filled = slots.filter((s) => s.length > 0);
+  return [0, 1, 2, 3, 4].map((i) => filled[i] ?? "");
+}
+
+function minVisibleRows(slots: string[]): number {
+  let lastFilled = -1;
+  for (let i = 0; i < MAX_HERO_IMAGES; i++) {
+    if (slots[i]) lastFilled = i;
+  }
+  if (lastFilled === -1) return 1;
+  if (lastFilled === MAX_HERO_IMAGES - 1) return MAX_HERO_IMAGES;
+  return Math.min(MAX_HERO_IMAGES, lastFilled + 2);
+}
+
+function slotsToPayload(slots: string[]) {
+  const p = packSlots(slots);
+  return {
+    heroImage1: p[0] ?? "",
+    heroImage2: p[1] ?? "",
+    heroImage3: p[2] ?? "",
+    heroImage4: p[3] ?? "",
+    heroImage5: p[4] ?? "",
+  };
+}
+
 export function FrontpageAdmin({ initial }: Props) {
   const [heroTitle, setHeroTitle] = useState(initial.heroTitle ?? "");
   const [heroSubtitle, setHeroSubtitle] = useState(initial.heroSubtitle ?? "");
   const [heroDescription, setHeroDescription] = useState(initial.heroDescription ?? "");
-  const [heroImage1, setHeroImage1] = useState(initial.heroImage1 ?? "");
-  const [heroImage2, setHeroImage2] = useState(initial.heroImage2 ?? "");
-  const [heroImage3, setHeroImage3] = useState(initial.heroImage3 ?? "");
-  const [heroImage4, setHeroImage4] = useState(initial.heroImage4 ?? "");
-  const [heroImage5, setHeroImage5] = useState(initial.heroImage5 ?? "");
+  const [slots, setSlots] = useState<string[]>(() => packSlots(slotsFromAbout(initial)));
+  const [visibleRows, setVisibleRows] = useState(() => minVisibleRows(packSlots(slotsFromAbout(initial))));
+
   const [pendingText, setPendingText] = useState(false);
   const [pendingImages, setPendingImages] = useState(false);
   const [textMsg, setTextMsg] = useState<string | null>(null);
@@ -33,11 +70,9 @@ export function FrontpageAdmin({ initial }: Props) {
       setHeroTitle(data.heroTitle ?? "");
       setHeroSubtitle(data.heroSubtitle ?? "");
       setHeroDescription(data.heroDescription ?? "");
-      setHeroImage1(data.heroImage1 ?? "");
-      setHeroImage2(data.heroImage2 ?? "");
-      setHeroImage3(data.heroImage3 ?? "");
-      setHeroImage4(data.heroImage4 ?? "");
-      setHeroImage5(data.heroImage5 ?? "");
+      const next = packSlots(slotsFromAbout(data));
+      setSlots(next);
+      setVisibleRows(minVisibleRows(next));
     }
     void load();
   }, []);
@@ -68,16 +103,11 @@ export function FrontpageAdmin({ initial }: Props) {
     setImgErr(null);
     setImgMsg(null);
     setPendingImages(true);
+    const packed = packSlots(slots);
     const res = await fetch("/api/about", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        heroImage1,
-        heroImage2,
-        heroImage3,
-        heroImage4,
-        heroImage5,
-      }),
+      body: JSON.stringify(slotsToPayload(packed)),
     });
     setPendingImages(false);
     if (!res.ok) {
@@ -85,16 +115,28 @@ export function FrontpageAdmin({ initial }: Props) {
       setImgErr(j.error ?? "Kunne ikke gemme billeder.");
       return;
     }
+    setSlots(packed);
+    setVisibleRows(minVisibleRows(packed));
     setImgMsg("Baggrundsbilleder er gemt.");
   }
 
-  const imageFields = [
-    { label: "Billede 1", value: heroImage1, set: setHeroImage1 },
-    { label: "Billede 2", value: heroImage2, set: setHeroImage2 },
-    { label: "Billede 3", value: heroImage3, set: setHeroImage3 },
-    { label: "Billede 4", value: heroImage4, set: setHeroImage4 },
-    { label: "Billede 5", value: heroImage5, set: setHeroImage5 },
-  ] as const;
+  function setSlotAt(index: number, url: string) {
+    setSlots((prev) => {
+      const next = [...prev];
+      next[index] = url;
+      return next;
+    });
+  }
+
+  function removeAt(index: number) {
+    const next = [...slots];
+    next[index] = "";
+    const packed = packSlots(next);
+    setSlots(packed);
+    setVisibleRows(minVisibleRows(packed));
+  }
+
+  const filledCount = slots.filter(Boolean).length;
 
   return (
     <div className="space-y-10">
@@ -154,23 +196,34 @@ export function FrontpageAdmin({ initial }: Props) {
       <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">
         <h2 className="font-serif text-2xl text-ink">Baggrundsbilleder</h2>
         <p className="mt-2 text-sm text-ink-muted">
-          Upload op til 5 billeder der vises diskret i baggrunden på forsiden. Brug dine bedste og
-          mest stemningsfulde billeder.
+          Upload op til {MAX_HERO_IMAGES} billeder til forsiden. Du starter med én upload-række — tryk{" "}
+          <span className="font-medium text-ink">+</span> for at tilføje plads til flere (højst{" "}
+          {MAX_HERO_IMAGES}).
+        </p>
+        <p className="mt-1 text-xs text-ink-muted">
+          {filledCount} / {MAX_HERO_IMAGES} billeder
         </p>
 
-        <div className="mt-6 grid gap-6">
-          {imageFields.map((f) => (
-            <div key={f.label} className="rounded border border-secondary/50 bg-paper p-4">
-              <p className="mb-2 font-medium text-ink">{f.label}</p>
-              <UploadForm folder="hero" label="Upload billede" onUploaded={(url) => f.set(url)} />
-              {f.value ? (
+        <div className="mt-6 space-y-6">
+          {Array.from({ length: visibleRows }, (_, rowIndex) => (
+            <div
+              key={rowIndex}
+              className="rounded border border-secondary/50 bg-paper p-4"
+            >
+              <p className="mb-2 text-sm font-medium text-ink">Billede {rowIndex + 1}</p>
+              <UploadForm
+                folder="hero"
+                label="Upload billede"
+                onUploaded={(url) => setSlotAt(rowIndex, url)}
+              />
+              {slots[rowIndex] ? (
                 <div className="mt-3 space-y-2">
                   <div className="h-40 overflow-hidden border border-secondary/50">
-                    <ArtworkImage src={f.value} alt="" className="h-full w-full object-cover" />
+                    <ArtworkImage src={slots[rowIndex]} alt="" className="h-full w-full object-cover" />
                   </div>
                   <button
                     type="button"
-                    onClick={() => f.set("")}
+                    onClick={() => removeAt(rowIndex)}
                     className="btn-outline border-rose-dust/50 text-rose-dust hover:bg-rose-dust/10"
                   >
                     Fjern billede
@@ -181,13 +234,24 @@ export function FrontpageAdmin({ initial }: Props) {
           ))}
         </div>
 
+        {visibleRows < MAX_HERO_IMAGES ? (
+          <button
+            type="button"
+            onClick={() => setVisibleRows((v) => Math.min(MAX_HERO_IMAGES, v + 1))}
+            className="mt-4 flex h-12 w-full items-center justify-center rounded border border-dashed border-secondary/70 bg-paper-warm/50 text-lg font-medium text-ink-muted transition hover:border-accent/50 hover:bg-linen/50 hover:text-ink"
+            aria-label="Tilføj endnu et billede-felt"
+          >
+            + Tilføj billede-plads ({visibleRows}/{MAX_HERO_IMAGES})
+          </button>
+        ) : null}
+
         <button
           type="button"
           onClick={() => void saveImages()}
           disabled={pendingImages}
           className="btn-outline mt-6"
         >
-          {pendingImages ? "Gemmer..." : "Gem"}
+          {pendingImages ? "Gemmer..." : "Gem billeder"}
         </button>
         {imgMsg ? <p className="mt-3 text-sm text-accent">{imgMsg}</p> : null}
         {imgErr ? <p className="mt-3 text-sm text-rose-dust">{imgErr}</p> : null}
@@ -195,4 +259,3 @@ export function FrontpageAdmin({ initial }: Props) {
     </div>
   );
 }
-

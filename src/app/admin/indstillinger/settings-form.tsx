@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 
 type ApiSuccess = {
-  ok: true;
-  message: string;
+  success?: boolean;
 };
 
 type ApiError = {
@@ -96,7 +95,11 @@ export function SettingsForm() {
       }
 
       const data = (await res.json()) as ApiSuccess;
-      setMessage(data.message);
+      if (data.success) {
+        setMessage(
+          "Adgangskoden er opdateret. Ved Vercel: redeploy siden så den nye adgangskode træder i kraft.",
+        );
+      }
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");

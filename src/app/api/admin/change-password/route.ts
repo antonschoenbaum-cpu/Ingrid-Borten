@@ -81,18 +81,17 @@ export async function POST(req: NextRequest) {
   try {
     const updated = await updatePasswordInVercel(newPassword);
     if (updated) {
-      return NextResponse.json({
-        ok: true,
-        message:
-          "Adgangskoden er opdateret via Vercel API. Redeploy siden for at bruge den nye adgangskode.",
-      });
+      return NextResponse.json({ success: true });
     }
   } catch {
-    // Falder tilbage til manuel besked.
+    // Ignoreres — returnerer fejl nedenfor uden at eksponere koden.
   }
 
-  return NextResponse.json({
-    ok: true,
-    message: `Din nye adgangskode er: ${newPassword} - opdater ADMIN_PASSWORD i Vercel dashboard under Settings -> Environment Variables, og redeploy siden`,
-  });
+  return NextResponse.json(
+    {
+      error:
+        "Kunne ikke opdatere adgangskoden automatisk i Vercel. Opdater ADMIN_PASSWORD manuelt under Environment Variables og redeploy (brug den nye adgangskode du lige valgte).",
+    },
+    { status: 500 },
+  );
 }

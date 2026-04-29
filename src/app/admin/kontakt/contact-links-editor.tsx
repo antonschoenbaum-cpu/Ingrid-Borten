@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import type { ContactLinks } from "@/types/content";
-import { saveContactLinks } from "../actions";
 
 type Props = {
   initial: ContactLinks;
@@ -20,10 +19,21 @@ export function ContactLinksEditor({ initial }: Props) {
     setErr(null);
     setPending(true);
     try {
-      await saveContactLinks({ facebookUrl, instagramUrl });
+      const res = await fetch("/api/contact-links", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ facebookUrl, instagramUrl }),
+      });
+      const data = (await res.json().catch(() => ({}))) as ContactLinks & { error?: string };
+      if (!res.ok) {
+        setErr(data.error ?? "Kunne ikke gemme.");
+        return;
+      }
+      if (typeof data.facebookUrl === "string") setFacebookUrl(data.facebookUrl);
+      if (typeof data.instagramUrl === "string") setInstagramUrl(data.instagramUrl);
       setMsg("Gemt. Linkene bruges på kontaktsiden.");
-    } catch (e) {
-      setErr(e instanceof Error ? e.message : "Kunne ikke gemme.");
+    } catch {
+      setErr("Kunne ikke gemme.");
     }
     setPending(false);
   }
@@ -67,7 +77,7 @@ export function ContactLinksEditor({ initial }: Props) {
       </label>
       <button
         type="button"
-        onClick={save}
+        onClick={() => void save()}
         disabled={pending}
         className="border border-ink bg-ink px-6 py-2 text-sm uppercase tracking-widest text-paper hover:bg-ink/90 disabled:opacity-50"
       >

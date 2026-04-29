@@ -22,6 +22,10 @@ import {
   readJewelryFromSupabase,
 } from "@/lib/supabase-jewelry";
 import {
+  canUseSupabaseContactRead,
+  readContactFromSupabase,
+} from "@/lib/supabase-contact";
+import {
   canUseSupabaseRead,
   canUseSupabaseWrite,
   readPaintingsFromSupabase,
@@ -97,6 +101,15 @@ export async function getAbout(): Promise<AboutData> {
 }
 
 export async function getContactLinks(): Promise<ContactLinks> {
+  noStore();
+  if (canUseSupabaseContactRead()) {
+    try {
+      const row = await readContactFromSupabase();
+      if (row) return row;
+    } catch {
+      // Falder tilbage til JSON.
+    }
+  }
   return readJson<ContactLinks>("contact.json");
 }
 

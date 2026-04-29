@@ -6,6 +6,8 @@ type Body = { status?: unknown };
 
 type Ctx = { params: Promise<{ id: string }> };
 
+const ALLOWED_ORDER_STATUSES = ["pending", "paid", "shipped"] as const;
+
 export async function PUT(req: NextRequest, ctx: Ctx) {
   const denied = await requireAdmin();
   if (denied) return denied;
@@ -20,6 +22,12 @@ export async function PUT(req: NextRequest, ctx: Ctx) {
   }
   const status = typeof body.status === "string" ? body.status.trim() : "";
   if (!status) return NextResponse.json({ error: "status mangler." }, { status: 400 });
+  if (!ALLOWED_ORDER_STATUSES.includes(status as (typeof ALLOWED_ORDER_STATUSES)[number])) {
+    return NextResponse.json(
+      { error: "status skal være pending, paid eller shipped." },
+      { status: 400 },
+    );
+  }
 
   try {
     await updateOrderStatus(id, status);
