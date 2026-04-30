@@ -1,18 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ContactLinks } from "@/types/content";
 
-type Props = {
-  initial: ContactLinks;
-};
-
-export function ContactLinksEditor({ initial }: Props) {
-  const [facebookUrl, setFacebookUrl] = useState(initial.facebookUrl);
-  const [instagramUrl, setInstagramUrl] = useState(initial.instagramUrl);
+export function ContactLinksEditor() {
+  const [facebookUrl, setFacebookUrl] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [loadErr, setLoadErr] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoadErr(null);
+      try {
+        const res = await fetch("/api/contact-links");
+        const data = (await res.json().catch(() => ({}))) as ContactLinks & { error?: string };
+        if (!res.ok) {
+          if (!cancelled) setLoadErr(data.error ?? "Kunne ikke hente links.");
+          return;
+        }
+        if (!cancelled) {
+          if (typeof data.facebookUrl === "string") setFacebookUrl(data.facebookUrl);
+          if (typeof data.instagramUrl === "string") setInstagramUrl(data.instagramUrl);
+        }
+      } catch {
+        if (!cancelled) setLoadErr("Kunne ikke hente links.");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function save() {
     setMsg(null);
@@ -36,6 +60,14 @@ export function ContactLinksEditor({ initial }: Props) {
       setErr("Kunne ikke gemme.");
     }
     setPending(false);
+  }
+
+  if (loading) {
+    return <p className="text-sm text-ink-muted">Henter links…</p>;
+  }
+
+  if (loadErr) {
+    return <p className="text-sm text-rose-dust">{loadErr}</p>;
   }
 
   return (

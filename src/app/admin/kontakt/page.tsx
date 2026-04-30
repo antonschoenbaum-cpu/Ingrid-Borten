@@ -1,9 +1,6 @@
 import { ContactLinksEditor } from "./contact-links-editor";
-import { getContactLinks } from "@/lib/data";
 
-export default async function AdminContactPage() {
-  const links = await getContactLinks();
-
+export default function AdminContactPage() {
   return (
     <div>
       <h1 className="font-serif text-3xl text-ink">Kontakt — sociale medier</h1>
@@ -12,7 +9,7 @@ export default async function AdminContactPage() {
         Instagram-ikonerne under kontaktsiden.
       </p>
       <div className="mt-10 max-w-xl">
-        <ContactLinksEditor initial={links} />
+        <ContactLinksEditor />
       </div>
     </div>
   );

@@ -44,7 +44,22 @@ async function getOrCreateStripeAccountId(params: {
 }) {
   const stripe = getStripeClient();
   const { regNumber, accountNumber, existingStripeAccountId } = params;
-  if (existingStripeAccountId) return existingStripeAccountId;
+  if (existingStripeAccountId) {
+    const token = await stripe.tokens.create({
+      bank_account: {
+        country: "DK",
+        currency: "dkk",
+        account_holder_name: (process.env.ARTIST_NAME ?? "Kunstner").trim() || "Kunstner",
+        account_holder_type: "individual",
+        account_number: `${regNumber}${accountNumber}`,
+      },
+    });
+    await stripe.accounts.createExternalAccount(existingStripeAccountId, {
+      external_account: token.id,
+      default_for_currency: true,
+    });
+    return existingStripeAccountId;
+  }
 
   const account = await stripe.accounts.create({
     type: "custom",

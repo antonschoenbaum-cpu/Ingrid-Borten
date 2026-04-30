@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Order = {
   id: string;
@@ -23,7 +23,7 @@ export function OrdersAdmin() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Order | null>(null);
 
-  async function load() {
+  const load = useCallback(async () => {
     setError(null);
     const res = await fetch("/api/admin/orders", { cache: "no-store" });
     const data = (await res.json().catch(() => ({}))) as { error?: string; orders?: Order[] };
@@ -32,11 +32,14 @@ export function OrdersAdmin() {
       return;
     }
     setOrders(Array.isArray(data.orders) ? data.orders : []);
-  }
+  }, []);
 
   useEffect(() => {
-    void load();
-  }, []);
+    const timer = setTimeout(() => {
+      void load();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [load]);
 
   async function markShipped(order: Order) {
     const res = await fetch(`/api/admin/orders/${order.id}`, {

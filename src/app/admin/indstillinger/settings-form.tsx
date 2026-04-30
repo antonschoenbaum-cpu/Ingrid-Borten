@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type ApiSuccess = {
   success?: boolean;
@@ -38,7 +38,7 @@ export function SettingsForm() {
   const [newUserPassword, setNewUserPassword] = useState("");
   const [createPending, setCreatePending] = useState(false);
 
-  async function loadUsers() {
+  const loadUsers = useCallback(async () => {
     setUsersPending(true);
     setUsersError(null);
     try {
@@ -56,11 +56,14 @@ export function SettingsForm() {
     } finally {
       setUsersPending(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    void loadUsers();
-  }, []);
+    const timer = setTimeout(() => {
+      void loadUsers();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [loadUsers]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();

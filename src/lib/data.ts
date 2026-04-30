@@ -1,6 +1,6 @@
 import path from "path";
 import { unstable_noStore as noStore } from "next/cache";
-import type { AboutData, ContactLinks, EventItem, Jewelry, Painting } from "@/types/content";
+import type { AboutData, EventItem, Jewelry, Painting } from "@/types/content";
 import {
   readAbout as storeReadAbout,
   readEvents as storeReadEvents,
@@ -22,23 +22,12 @@ import {
   readJewelryFromSupabase,
 } from "@/lib/supabase-jewelry";
 import {
-  canUseSupabaseContactRead,
-  readContactFromSupabase,
-} from "@/lib/supabase-contact";
-import {
   canUseSupabaseRead,
   canUseSupabaseWrite,
   readPaintingsFromSupabase,
 } from "@/lib/supabase-paintings";
 
 const dataDir = path.join(process.cwd(), "data");
-
-async function readJson<T>(file: string): Promise<T> {
-  noStore();
-  const fs = await import("fs/promises");
-  const raw = await fs.readFile(path.join(dataDir, file), "utf-8");
-  return JSON.parse(raw) as T;
-}
 
 export async function getPaintings(): Promise<Painting[]> {
   noStore();
@@ -98,19 +87,6 @@ export async function getAbout(): Promise<AboutData> {
     }
   }
   return storeReadAbout();
-}
-
-export async function getContactLinks(): Promise<ContactLinks> {
-  noStore();
-  if (canUseSupabaseContactRead()) {
-    try {
-      const row = await readContactFromSupabase();
-      if (row) return row;
-    } catch {
-      // Falder tilbage til JSON.
-    }
-  }
-  return readJson<ContactLinks>("contact.json");
 }
 
 export function getDataDir(): string {

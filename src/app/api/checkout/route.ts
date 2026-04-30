@@ -36,6 +36,9 @@ export async function POST(req: NextRequest) {
   const stripeKey = (process.env.STRIPE_SECRET_KEY ?? "").trim();
   if (!stripeKey) return NextResponse.json({ error: "STRIPE_SECRET_KEY mangler." }, { status: 500 });
   const stripe = new Stripe(stripeKey);
+  const isTestStripeKey = stripeKey.startsWith("sk_test_");
+  const allowDirectTestCheckout =
+    isTestStripeKey && (process.env.STRIPE_TEST_MODE_ALLOW_DIRECT ?? "true").toLowerCase() !== "false";
 
   const [product, artistSettings] = await Promise.all([
     readProductById(productTypeRaw, productId),
@@ -48,7 +51,7 @@ export async function POST(req: NextRequest) {
   if (!artistSettings.paymentsEnabled) {
     return NextResponse.json({ error: "Betaling er ikke aktiv." }, { status: 400 });
   }
-  if (!artistSettings.stripeAccountId) {
+  if (!artistSettings.stripeAccountId && !allowDirectTestCheckout) {
     return NextResponse.json({ error: "Stripe konto mangler i betalingsopsætning." }, { status: 400 });
   }
 
@@ -57,7 +60,7 @@ export async function POST(req: NextRequest) {
     req.headers.get("origin") ||
     req.nextUrl.origin;
   const unitAmount = Math.round(product.price * 100);
-  const session = await stripe.checkout.sessions.create({
+  const sessionPayload: Stripe.Checkout.SessionCreateParams = {
     mode: "payment",
     line_items: [
       {
@@ -76,17 +79,23 @@ export async function POST(req: NextRequest) {
     success_url: `${origin}/tak?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/${productTypeRaw}/${productId}`,
     shipping_address_collection: { allowed_countries: ["DK"] },
-    payment_intent_data: {
-      transfer_data: { destination: artistSettings.stripeAccountId },
-    },
     metadata: {
       product_type: productTypeRaw,
       product_id: productId,
       product_title: product.title,
       pickup_point_id: pickupPointId,
       carrier,
+      checkout_mode: allowDirectTestCheckout && !artistSettings.stripeAccountId ? "test_direct" : "connect",
     },
-  });
+  };
+
+  if (artistSettings.stripeAccountId) {
+    sessionPayload.payment_intent_data = {
+      transfer_data: { destination: artistSettings.stripeAccountId },
+    };
+  }
+
+  const session = await stripe.checkout.sessions.create(sessionPayload);
 
   return NextResponse.json({ url: session.url });
 }

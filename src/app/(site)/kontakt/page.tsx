@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ContactSection } from "./contact-section";
-import { getContactLinks } from "@/lib/data";
+import { canUseSupabaseContactRead, readContactFromSupabase } from "@/lib/supabase-contact";
 
 export const dynamic = "force-dynamic";
 const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
@@ -27,7 +27,19 @@ export default async function ContactPage({
   const sp = searchParams ? await searchParams : {};
   const vare = pickString(sp.vare);
   const type = pickString(sp.type);
-  const { facebookUrl, instagramUrl } = await getContactLinks();
+  let facebookUrl = "";
+  let instagramUrl = "";
+  if (canUseSupabaseContactRead()) {
+    try {
+      const row = await readContactFromSupabase();
+      if (row) {
+        facebookUrl = row.facebookUrl;
+        instagramUrl = row.instagramUrl;
+      }
+    } catch {
+      // Ingen links ved midlertidig fejl eller tom række.
+    }
+  }
 
   let initialMessage = "";
   if (vare) {
