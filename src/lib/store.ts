@@ -95,6 +95,8 @@ export async function readAbout(): Promise<AboutData> {
     heroImage3: data.heroImage3 ?? "",
     heroImage4: data.heroImage4 ?? "",
     heroImage5: data.heroImage5 ?? "",
+    galleryPaintingsDescription: data.galleryPaintingsDescription ?? "",
+    galleryJewelryDescription: data.galleryJewelryDescription ?? "",
   };
 }
 
@@ -111,5 +113,8 @@ export function revalidatePublicContent() {
 }
 
 export function revalidateAboutPaths() {
+  revalidatePath("/");
   revalidatePath("/om");
+  revalidatePath("/malerier");
+  revalidatePath("/smykker");
 }

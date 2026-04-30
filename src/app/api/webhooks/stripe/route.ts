@@ -2,8 +2,9 @@ import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { Resend } from "resend";
-import { createPaidOrder, markProductSold } from "@/lib/orders";
+import { createPaidOrder, markProductSold, updateOrderStatus } from "@/lib/orders";
 import { createShipmentForOrder } from "@/lib/shipmondo";
+import { resendFromHeader } from "@/lib/resend-from";
 import { type ProductType } from "@/lib/webshop";
 
 export const dynamic = "force-dynamic";
@@ -16,23 +17,66 @@ async function sendBuyerMail(input: {
   to: string;
   productTitle: string;
   amountDkk: number;
-  pickupPoint: string | null;
+  pickupPointLabel: string | null;
 }) {
   const key = (process.env.RESEND_API_KEY ?? "").trim();
   if (!key || !input.to) return;
   const resend = new Resend(key);
+  const pickup =
+    input.pickupPointLabel?.trim() ||
+    "Leveres til din valgte afhentningsadresse";
   await resend.emails.send({
-    from: "Køb <onboarding@resend.dev>",
+    from: resendFromHeader(),
     to: input.to,
     subject: "Tak for dit køb",
     html: `
       <h2>Tak for dit køb</h2>
       <p><strong>Produkt:</strong> ${input.productTitle}</p>
       <p><strong>Pris:</strong> ${input.amountDkk.toLocaleString("da-DK")} kr.</p>
-      <p><strong>Pakkeshop:</strong> ${input.pickupPoint ?? "Ikke angivet"}</p>
+      <p><strong>Pakkeshop:</strong> ${pickup}</p>
       <p>Forventet levering: 1-3 hverdage.</p>
     `,
   });
+}
+
+async function sendSellerShipmentFailureMail(input: { productTitle: string }) {
+  const key = (process.env.RESEND_API_KEY ?? "").trim();
+  const to = (process.env.CONTACT_EMAIL ?? "").trim();
+  if (!key || !to) return;
+  const resend = new Resend(key);
+  await resend.emails.send({
+    from: resendFromHeader(),
+    to,
+    subject: `OBS: Fragtlabel kunne ikke oprettes — ${input.productTitle}`,
+    html: `
+      <p>OBS: Betaling modtaget for <strong>${input.productTitle}</strong> men fragtlabel
+      kunne ikke oprettes automatisk.</p>
+      <p>Opret label manuelt i admin under <strong>Ordrer</strong>.</p>
+    `,
+  });
+}
+
+async function tryCreateShipmentAfterPayment(orderId: string, productTitle: string) {
+  const base = (process.env.AUTH_URL ?? "").trim();
+  try {
+    if (base) {
+      const shipRes = await fetch(`${base}/api/shipmondo/create-shipment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order_id: orderId }),
+      });
+      if (!shipRes.ok) {
+        const detail = await shipRes.text().catch(() => "");
+        throw new Error(`Shipmondo API ${shipRes.status}: ${detail}`);
+      }
+    } else {
+      await createShipmentForOrder(orderId);
+    }
+  } catch (error) {
+    console.error("[stripe webhook] Shipment creation failed for order", orderId, error);
+    await updateOrderStatus(orderId, "paid_no_shipment");
+    await sendSellerShipmentFailureMail({ productTitle });
+  }
 }
 
 export async function POST(req: Request) {
@@ -64,15 +108,20 @@ export async function POST(req: Request) {
   const productId = String(session.metadata?.product_id ?? "");
   const pickupPointId = String(session.metadata?.pickup_point_id ?? "") || null;
   const carrier = String(session.metadata?.carrier ?? "") || null;
+  const pickupPointLabel =
+    String(session.metadata?.pickup_point_label ?? "").trim() || null;
   if (!isProductType(productTypeRaw) || !productId || !session.id) {
     return NextResponse.json({ error: "Manglende metadata i checkout session." }, { status: 400 });
   }
 
   try {
+    const productTitle = String(
+      session.metadata?.product_title ?? session.client_reference_id ?? "Værk",
+    );
     const order = await createPaidOrder({
       productType: productTypeRaw,
       productId,
-      productTitle: String(session.metadata?.product_title ?? session.client_reference_id ?? "Værk"),
+      productTitle,
       amount: Number(session.amount_total ?? 0),
       currency: String(session.currency ?? "dkk"),
       customerName: String(session.customer_details?.name ?? "Kunde"),
@@ -81,6 +130,7 @@ export async function POST(req: Request) {
       customerCity: String(session.customer_details?.address?.city ?? ""),
       customerZip: String(session.customer_details?.address?.postal_code ?? ""),
       pickupPointId,
+      pickupPointName: pickupPointLabel,
       carrier,
       stripeSessionId: session.id,
     });
@@ -91,19 +141,10 @@ export async function POST(req: Request) {
       to: order.customer_email,
       productTitle: order.product_title,
       amountDkk: order.amount / 100,
-      pickupPoint: order.selected_pickup_point_id,
+      pickupPointLabel: order.pickup_point_name ?? pickupPointLabel,
     });
 
-    const base = (process.env.AUTH_URL ?? "").trim();
-    if (base) {
-      await fetch(`${base}/api/shipmondo/create-shipment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order_id: order.id }),
-      });
-    } else {
-      await createShipmentForOrder(order.id);
-    }
+    await tryCreateShipmentAfterPayment(order.id, order.product_title);
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Ukendt fejl";
     if (msg.toLowerCase().includes("duplicate key") || msg.toLowerCase().includes("unique")) {
@@ -114,4 +155,3 @@ export async function POST(req: Request) {
 
   return NextResponse.json({ ok: true });
 }
-

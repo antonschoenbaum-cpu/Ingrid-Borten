@@ -1,6 +1,7 @@
 import { Resend } from "resend";
 import { getOrderById, updateOrderShipment } from "@/lib/orders";
 import { readArtistSettings } from "@/lib/webshop";
+import { resendFromHeader } from "@/lib/resend-from";
 
 function productCodeFromCarrier(carrier: string | null): string {
   const c = (carrier ?? "").toLowerCase();
@@ -16,14 +17,14 @@ async function sendSellerMail(input: {
   customerName: string;
   address: string;
   cityZip: string;
-  pickupPointId: string | null;
+  pickupPointDisplay: string | null;
   labelUrl: string | null;
 }) {
   const key = (process.env.RESEND_API_KEY ?? "").trim();
   if (!key) return;
   const resend = new Resend(key);
   await resend.emails.send({
-    from: "Salg <onboarding@resend.dev>",
+    from: resendFromHeader(),
     to: input.toEmail,
     subject: `Du har solgt: ${input.productTitle} 🎉`,
     html: `
@@ -32,7 +33,7 @@ async function sendSellerMail(input: {
       <p><strong>Pris:</strong> ${input.amountDkk.toLocaleString("da-DK")} kr.</p>
       <p><strong>Køber:</strong> ${input.customerName}</p>
       <p><strong>Leveringsadresse:</strong> ${input.address}, ${input.cityZip}</p>
-      <p><strong>Valgt pakkeshop:</strong> ${input.pickupPointId ?? "Ikke angivet"}</p>
+      <p><strong>Valgt pakkeshop:</strong> ${input.pickupPointDisplay ?? "Ikke angivet"}</p>
       ${
         input.labelUrl
           ? `<p><a href="${input.labelUrl}" style="font-size:18px;font-weight:bold">Hent din fragtlabel</a></p>`
@@ -118,7 +119,10 @@ export async function createShipmentForOrder(orderId: string) {
       customerName: order.customer_name,
       address: order.customer_address,
       cityZip: `${order.customer_zip} ${order.customer_city}`,
-      pickupPointId: order.selected_pickup_point_id,
+      pickupPointDisplay:
+        order.pickup_point_name?.trim() ||
+        order.selected_pickup_point_id ||
+        null,
       labelUrl: labelUrl || null,
     });
   }

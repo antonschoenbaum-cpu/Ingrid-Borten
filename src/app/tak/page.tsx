@@ -20,7 +20,7 @@ export default async function ThankYouPage({ searchParams }: { searchParams?: Se
 
   let productTitle = "Dit værk";
   let amount = 0;
-  let pickupPoint = "";
+  let deliveryLine = "Leveres til din valgte afhentningsadresse";
 
   const key = (process.env.STRIPE_SECRET_KEY ?? "").trim();
   if (sessionId && key) {
@@ -29,7 +29,9 @@ export default async function ThankYouPage({ searchParams }: { searchParams?: Se
       const session = await stripe.checkout.sessions.retrieve(sessionId);
       productTitle = String(session.metadata?.product_title ?? "Dit værk");
       amount = Number(session.amount_total ?? 0);
-      pickupPoint = String(session.metadata?.pickup_point_id ?? "");
+      const label = String(session.metadata?.pickup_point_label ?? "").trim();
+      deliveryLine =
+        label || "Leveres til din valgte afhentningsadresse";
     } catch {
       // Ignoreres: viser fallback-tekst.
     }
@@ -51,8 +53,8 @@ export default async function ThankYouPage({ searchParams }: { searchParams?: Se
             {(amount / 100).toLocaleString("da-DK")} kr.
           </p>
           <p>
-            <span className="font-medium text-ink">Pakkeshop:</span>{" "}
-            {pickupPoint || "Valgt i checkout"}
+            <span className="font-medium text-ink">Din ordre leveres til:</span>{" "}
+            {deliveryLine}
           </p>
         </div>
         <p className="mt-8 text-sm text-ink-muted">

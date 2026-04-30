@@ -89,6 +89,14 @@ export async function PUT(req: NextRequest) {
   const heroImage3 = typeof body.heroImage3 === "string" ? body.heroImage3.trim() : (prev.heroImage3 ?? "");
   const heroImage4 = typeof body.heroImage4 === "string" ? body.heroImage4.trim() : (prev.heroImage4 ?? "");
   const heroImage5 = typeof body.heroImage5 === "string" ? body.heroImage5.trim() : (prev.heroImage5 ?? "");
+  const galleryPaintingsDescription =
+    typeof body.galleryPaintingsDescription === "string"
+      ? body.galleryPaintingsDescription.trim().slice(0, 600)
+      : (prev.galleryPaintingsDescription ?? "");
+  const galleryJewelryDescription =
+    typeof body.galleryJewelryDescription === "string"
+      ? body.galleryJewelryDescription.trim().slice(0, 600)
+      : (prev.galleryJewelryDescription ?? "");
   const heroImagesChanged =
     heroImage1 !== (prev.heroImage1 ?? "") ||
     heroImage2 !== (prev.heroImage2 ?? "") ||
@@ -121,6 +129,8 @@ export async function PUT(req: NextRequest) {
     heroImage3,
     heroImage4,
     heroImage5,
+    galleryPaintingsDescription,
+    galleryJewelryDescription,
   };
 
   try {

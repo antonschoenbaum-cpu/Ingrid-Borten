@@ -52,6 +52,12 @@ export function FrontpageAdmin({ initial }: Props) {
   const [heroTitle, setHeroTitle] = useState(initial.heroTitle ?? "");
   const [heroSubtitle, setHeroSubtitle] = useState(initial.heroSubtitle ?? "");
   const [heroDescription, setHeroDescription] = useState(initial.heroDescription ?? "");
+  const [galleryPaintingsDescription, setGalleryPaintingsDescription] = useState(
+    initial.galleryPaintingsDescription ?? "",
+  );
+  const [galleryJewelryDescription, setGalleryJewelryDescription] = useState(
+    initial.galleryJewelryDescription ?? "",
+  );
   const [slots, setSlots] = useState<string[]>(() => packSlots(slotsFromAbout(initial)));
   const [visibleRows, setVisibleRows] = useState(() => minVisibleRows(packSlots(slotsFromAbout(initial))));
 
@@ -70,6 +76,8 @@ export function FrontpageAdmin({ initial }: Props) {
       setHeroTitle(data.heroTitle ?? "");
       setHeroSubtitle(data.heroSubtitle ?? "");
       setHeroDescription(data.heroDescription ?? "");
+      setGalleryPaintingsDescription(data.galleryPaintingsDescription ?? "");
+      setGalleryJewelryDescription(data.galleryJewelryDescription ?? "");
       const next = packSlots(slotsFromAbout(data));
       setSlots(next);
       setVisibleRows(minVisibleRows(next));
@@ -88,6 +96,8 @@ export function FrontpageAdmin({ initial }: Props) {
         heroTitle: heroTitle.slice(0, 120),
         heroSubtitle: heroSubtitle.slice(0, 160),
         heroDescription: heroDescription.slice(0, 300),
+        galleryPaintingsDescription: galleryPaintingsDescription.slice(0, 600),
+        galleryJewelryDescription: galleryJewelryDescription.slice(0, 600),
       }),
     });
     setPendingText(false);
@@ -182,6 +192,36 @@ export function FrontpageAdmin({ initial }: Props) {
             />
             <span className="mt-1 block text-xs text-ink-muted">
               Teksten midt på forsiden der beskriver dig og dit arbejde
+            </span>
+          </label>
+
+          <label className="block text-sm text-ink-muted">
+            Tekst på malerier-siden
+            <textarea
+              value={galleryPaintingsDescription}
+              maxLength={600}
+              onChange={(e) => setGalleryPaintingsDescription(e.target.value)}
+              className="mt-1 w-full border border-secondary/60 bg-paper px-3 py-2 text-sm text-ink"
+              placeholder="Se udvalget af originale værker"
+              rows={3}
+            />
+            <span className="mt-1 block text-xs text-ink-muted">
+              Vises under overskriften på den offentlige side «Malerier»
+            </span>
+          </label>
+
+          <label className="block text-sm text-ink-muted">
+            Tekst på smykker-siden
+            <textarea
+              value={galleryJewelryDescription}
+              maxLength={600}
+              onChange={(e) => setGalleryJewelryDescription(e.target.value)}
+              className="mt-1 w-full border border-secondary/60 bg-paper px-3 py-2 text-sm text-ink"
+              placeholder="Se udvalget af originale værker"
+              rows={3}
+            />
+            <span className="mt-1 block text-xs text-ink-muted">
+              Vises under overskriften på den offentlige side «Smykker»
             </span>
           </label>
         </div>

@@ -266,7 +266,9 @@ export function PaymentSettingsForm() {
             </button>
           </form>
           {stripeAccountId ? (
-            <p className="mt-3 text-xs text-ink-muted">Stripe konto: {stripeAccountId}</p>
+            <p className="mt-3 inline-flex items-center gap-2 rounded border border-sage-deep/40 bg-sage-deep/10 px-3 py-1.5 text-sm text-sage-deep">
+              <span aria-hidden>✓</span> Betalingskonto tilknyttet
+            </p>
           ) : null}
           {paymentMsg ? <p className="mt-3 text-sm text-accent">{paymentMsg}</p> : null}
           {paymentError ? <p className="mt-3 text-sm text-rose-dust">{paymentError}</p> : null}

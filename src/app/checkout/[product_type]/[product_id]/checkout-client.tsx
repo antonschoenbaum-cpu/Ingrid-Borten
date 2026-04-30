@@ -62,6 +62,8 @@ export function CheckoutClient({ productType, productId }: Props) {
           product_type: productType,
           product_id: productId,
           pickup_point_id: selected.id,
+          pickup_point_name: selected.name,
+          pickup_point_address: `${selected.address}, ${selected.zipcode} ${selected.city}`,
           carrier: selected.carrier,
         }),
       });

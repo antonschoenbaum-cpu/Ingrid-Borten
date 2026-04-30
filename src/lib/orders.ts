@@ -13,6 +13,8 @@ export type OrderRow = {
   customer_city: string;
   customer_zip: string;
   selected_pickup_point_id: string | null;
+  /** Menneskelæsbar pakkeshop (navn + adresse), gemt ved checkout. */
+  pickup_point_name: string | null;
   selected_carrier: string | null;
   stripe_session_id: string;
   status: string;
@@ -34,6 +36,7 @@ export async function createPaidOrder(input: {
   customerCity: string;
   customerZip: string;
   pickupPointId: string | null;
+  pickupPointName: string | null;
   carrier: string | null;
   stripeSessionId: string;
 }) {
@@ -50,6 +53,7 @@ export async function createPaidOrder(input: {
     customer_city: input.customerCity,
     customer_zip: input.customerZip,
     selected_pickup_point_id: input.pickupPointId,
+    pickup_point_name: input.pickupPointName,
     selected_carrier: input.carrier,
     stripe_session_id: input.stripeSessionId,
     status: "paid",

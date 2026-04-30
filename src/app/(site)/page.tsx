@@ -81,25 +81,29 @@ export default async function HomePage() {
               Se alle malerier
             </Link>
           </div>
-          <div className="grid gap-8 sm:grid-cols-3">
-            {recentPaintings.map((p) => (
-              <Link key={p.id} href={`/malerier/${p.id}`} className="group block">
-                <div className="overflow-hidden border border-secondary/50 bg-paper transition duration-300 group-hover:border-accent/35 group-hover:shadow-md">
-                  <ArtworkImage
-                    src={p.image}
-                    alt={p.title}
-                    className="aspect-[4/5] w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
-                  />
-                  <div className="border-t border-secondary/40 px-4 py-4">
-                    <h3 className="font-serif text-lg">{p.title}</h3>
-                    <p className="mt-1">
-                      <SoldPrice price={p.price} sold={p.sold} size="card" />
-                    </p>
+          {recentPaintings.length === 0 ? (
+            <p className="text-ink-muted">Malerier tilføjes snart.</p>
+          ) : (
+            <div className="grid gap-8 sm:grid-cols-3">
+              {recentPaintings.map((p) => (
+                <Link key={p.id} href={`/malerier/${p.id}`} className="group block">
+                  <div className="overflow-hidden border border-secondary/50 bg-paper transition duration-300 group-hover:border-accent/35 group-hover:shadow-md">
+                    <ArtworkImage
+                      src={p.image}
+                      alt={p.title}
+                      className="aspect-[4/5] w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+                    />
+                    <div className="border-t border-secondary/40 px-4 py-4">
+                      <h3 className="font-serif text-lg">{p.title}</h3>
+                      <p className="mt-1">
+                        <SoldPrice price={p.price} sold={p.sold} size="card" />
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -113,25 +117,29 @@ export default async function HomePage() {
             Se alle smykker
           </Link>
         </div>
-        <div className="grid gap-8 sm:grid-cols-3">
-          {recentJewelry.map((j) => (
-            <Link key={j.id} href={`/smykker/${j.id}`} className="group block">
-              <div className="overflow-hidden border border-secondary/50 bg-paper transition duration-300 group-hover:border-accent/35 group-hover:shadow-md">
-                <ArtworkImage
-                  src={j.image}
-                  alt={j.title}
-                  className="aspect-square w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
-                />
-                <div className="border-t border-secondary/40 px-4 py-4">
-                  <h3 className="font-serif text-lg">{j.title}</h3>
-                  <p className="mt-1">
-                    <SoldPrice price={j.price} sold={j.sold} size="card" />
-                  </p>
+        {recentJewelry.length === 0 ? (
+          <p className="text-ink-muted">Smykker tilføjes snart.</p>
+        ) : (
+          <div className="grid gap-8 sm:grid-cols-3">
+            {recentJewelry.map((j) => (
+              <Link key={j.id} href={`/smykker/${j.id}`} className="group block">
+                <div className="overflow-hidden border border-secondary/50 bg-paper transition duration-300 group-hover:border-accent/35 group-hover:shadow-md">
+                  <ArtworkImage
+                    src={j.image}
+                    alt={j.title}
+                    className="aspect-square w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+                  />
+                  <div className="border-t border-secondary/40 px-4 py-4">
+                    <h3 className="font-serif text-lg">{j.title}</h3>
+                    <p className="mt-1">
+                      <SoldPrice price={j.price} sold={j.sold} size="card" />
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              </Link>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="bg-linen/50">

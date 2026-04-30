@@ -6,6 +6,8 @@ type Body = {
   product_type?: unknown;
   product_id?: unknown;
   pickup_point_id?: unknown;
+  pickup_point_name?: unknown;
+  pickup_point_address?: unknown;
   carrier?: unknown;
 };
 
@@ -15,6 +17,13 @@ function asString(v: unknown): string {
 
 function isProductType(v: string): v is ProductType {
   return v === "paintings" || v === "jewelry";
+}
+
+/** Stripe metadata values max 500 tegn — hold margin. */
+function stripeMetaValue(s: string): string {
+  const t = s.trim();
+  if (t.length <= 480) return t;
+  return `${t.slice(0, 479)}…`;
 }
 
 export async function POST(req: NextRequest) {
@@ -28,7 +37,15 @@ export async function POST(req: NextRequest) {
   const productTypeRaw = asString(body.product_type);
   const productId = asString(body.product_id);
   const pickupPointId = asString(body.pickup_point_id);
+  const pickupPointName = asString(body.pickup_point_name);
+  const pickupPointAddress = asString(body.pickup_point_address);
   const carrier = asString(body.carrier);
+  const pickupPointLabel =
+    pickupPointName || pickupPointAddress
+      ? stripeMetaValue(
+          [pickupPointName, pickupPointAddress].filter((x) => x.length > 0).join(" — "),
+        )
+      : "";
   if (!isProductType(productTypeRaw) || !productId) {
     return NextResponse.json({ error: "Manglende produktdata." }, { status: 400 });
   }
@@ -52,7 +69,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Betaling er ikke aktiv." }, { status: 400 });
   }
   if (!artistSettings.stripeAccountId && !allowDirectTestCheckout) {
-    return NextResponse.json({ error: "Stripe konto mangler i betalingsopsætning." }, { status: 400 });
+    return NextResponse.json(
+      {
+        error: "Betaling er desværre ikke tilgængelig lige nu. Kontakt kunstneren direkte.",
+      },
+      { status: 400 },
+    );
   }
 
   const origin =
@@ -84,6 +106,7 @@ export async function POST(req: NextRequest) {
       product_id: productId,
       product_title: product.title,
       pickup_point_id: pickupPointId,
+      ...(pickupPointLabel ? { pickup_point_label: pickupPointLabel } : {}),
       carrier,
       checkout_mode: allowDirectTestCheckout && !artistSettings.stripeAccountId ? "test_direct" : "connect",
     },

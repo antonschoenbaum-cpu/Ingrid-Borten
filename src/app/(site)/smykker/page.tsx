@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { GalleryGrid } from "@/components/GalleryGrid";
-import { getJewelry } from "@/lib/data";
+import { getAbout, getJewelry } from "@/lib/data";
 const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
 
 export const metadata: Metadata = {
@@ -9,17 +9,16 @@ export const metadata: Metadata = {
 };
 
 export default async function JewelryPage() {
-  const items = await getJewelry();
+  const [items, about] = await Promise.all([getJewelry(), getAbout()]);
   const sorted = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const intro =
+    about.galleryJewelryDescription?.trim() || "Se udvalget af originale værker";
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-20">
       <header className="section-rule mb-12 max-w-2xl pb-12">
         <h1 className="font-serif text-4xl text-ink md:text-5xl">Smykker</h1>
-        <p className="mt-4 text-lg leading-relaxed text-ink-muted">
-          Håndlavede øreringe og smykker med skulpturel karakter. Vælg et værk for detaljer
-          og forespørgsel.
-        </p>
+        <p className="mt-4 text-lg leading-relaxed text-ink-muted">{intro}</p>
       </header>
       <GalleryGrid items={sorted} basePath="/smykker" />
     </div>

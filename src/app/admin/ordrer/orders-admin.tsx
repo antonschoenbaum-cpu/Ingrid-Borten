@@ -15,6 +15,7 @@ type Order = {
   status: string;
   selected_carrier: string | null;
   selected_pickup_point_id: string | null;
+  pickup_point_name: string | null;
   label_url: string | null;
 };
 
@@ -56,8 +57,17 @@ export function OrdersAdmin() {
 
   function statusLabel(status: string) {
     if (status === "paid") return "Betalt";
+    if (status === "paid_no_shipment") return "Betalt (fragt manuelt)";
     if (status === "shipped") return "Afsendt";
     return "Afventer";
+  }
+
+  function pickupDisplay(o: Order) {
+    const name = o.pickup_point_name?.trim();
+    if (name) return name;
+    const id = o.selected_pickup_point_id?.trim();
+    if (id) return id;
+    return "Ikke angivet";
   }
 
   return (
@@ -117,9 +127,7 @@ export function OrdersAdmin() {
           <p className="text-sm text-ink-muted">
             Adresse: {selected.customer_address}, {selected.customer_zip} {selected.customer_city}
           </p>
-          <p className="text-sm text-ink-muted">
-            Pakkeshop: {selected.selected_pickup_point_id ?? "Ikke angivet"}
-          </p>
+          <p className="text-sm text-ink-muted">Pakkeshop: {pickupDisplay(selected)}</p>
           {selected.label_url ? (
             <a
               href={selected.label_url}

@@ -31,15 +31,16 @@ function FormFields({
         label="Vælg et billede fra din computer"
         onUploaded={(url) => setForm((f) => ({ ...f, image: url }))}
       />
-      <label className="block text-sm text-ink-muted">
-        Billede-URL
-        <input
-          value={form.image}
-          onChange={(e) => setForm((f) => ({ ...f, image: e.target.value }))}
-          className="mt-1 w-full border border-secondary/60 bg-paper px-3 py-2 text-sm text-ink"
-          placeholder="/uploads/jewelry/… eller ekstern URL"
-        />
-      </label>
+      {form.image ? (
+        <div className="space-y-2">
+          <p className="text-xs text-ink-muted">Forhåndsvisning</p>
+          <div className="h-48 max-w-sm overflow-hidden border border-secondary/50 bg-paper-warm">
+            <ArtworkImage src={form.image} alt="" className="size-full object-cover" />
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-ink-muted">Upload et billede for at fortsætte.</p>
+      )}
       <label className="block text-sm text-ink-muted">
         Titel
         <input
@@ -162,7 +163,7 @@ export function JewelryAdmin({ initial }: Props) {
       sold,
     };
     if (!body.title || !body.image) {
-      setErr("Titel og billede-URL er påkrævet (upload først).");
+      setErr("Titel og billede er påkrævet — upload et billede ovenfor.");
       return;
     }
     if (!Number.isFinite(priceNum) || priceNum < 0) {
@@ -187,7 +188,10 @@ export function JewelryAdmin({ initial }: Props) {
     setPending(false);
     if (!res.ok) {
       const j = (await res.json().catch(() => ({}))) as { error?: string };
-      setErr(j.error ?? `Kunne ikke gemme (HTTP ${res.status}).`);
+      setErr(
+        j.error ??
+          "Noget gik galt — prøv igen. Kontakt support hvis problemet fortsætter.",
+      );
       return;
     }
     setMsg(isNew ? "Smykke oprettet." : "Smykke opdateret.");
@@ -206,7 +210,10 @@ export function JewelryAdmin({ initial }: Props) {
     });
     if (!res.ok) {
       const j = (await res.json().catch(() => ({}))) as { error?: string };
-      setErr(j.error ?? `Kunne ikke slette (HTTP ${res.status}).`);
+      setErr(
+        j.error ??
+          "Noget gik galt — prøv igen. Kontakt support hvis problemet fortsætter.",
+      );
       return;
     }
     if (editingId === id) cancelForm();

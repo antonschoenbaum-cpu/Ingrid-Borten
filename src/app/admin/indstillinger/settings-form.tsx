@@ -99,9 +99,7 @@ export function SettingsForm() {
 
       const data = (await res.json()) as ApiSuccess;
       if (data.success) {
-        setMessage(
-          "Adgangskoden er opdateret. Ved Vercel: redeploy siden så den nye adgangskode træder i kraft.",
-        );
+        setMessage("Din nye adgangskode er gemt. Log ud og ind igen for at bekræfte ændringen.");
       }
       setCurrentPassword("");
       setNewPassword("");

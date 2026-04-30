@@ -18,6 +18,8 @@ type AboutRow = {
   hero_image_3: string | null;
   hero_image_4: string | null;
   hero_image_5: string | null;
+  gallery_paintings_description: string | null;
+  gallery_jewelry_description: string | null;
 };
 
 function supabaseUrl(): string {
@@ -92,6 +94,8 @@ function mapRowToAbout(r: AboutRow): AboutData {
     heroImage3: r.hero_image_3 ?? "",
     heroImage4: r.hero_image_4 ?? "",
     heroImage5: r.hero_image_5 ?? "",
+    galleryPaintingsDescription: r.gallery_paintings_description ?? "",
+    galleryJewelryDescription: r.gallery_jewelry_description ?? "",
   };
 }
 
@@ -101,7 +105,7 @@ export async function readAboutFromSupabase(): Promise<AboutData | null> {
   const { data, error } = await supabase
     .from("about_content")
     .select(
-      "id,biography,artist_photo,cv_entries,hero_title,hero_subtitle,hero_description,hero_image_1,hero_image_2,hero_image_3,hero_image_4,hero_image_5",
+      "id,biography,artist_photo,cv_entries,hero_title,hero_subtitle,hero_description,hero_image_1,hero_image_2,hero_image_3,hero_image_4,hero_image_5,gallery_paintings_description,gallery_jewelry_description",
     )
     .eq("id", "main")
     .maybeSingle();
@@ -125,12 +129,14 @@ export async function upsertAboutInSupabase(data: AboutData): Promise<AboutData>
     hero_image_3: data.heroImage3 ?? "",
     hero_image_4: data.heroImage4 ?? "",
     hero_image_5: data.heroImage5 ?? "",
+    gallery_paintings_description: data.galleryPaintingsDescription ?? "",
+    gallery_jewelry_description: data.galleryJewelryDescription ?? "",
   };
   const { data: row, error } = await supabase
     .from("about_content")
     .upsert(payload, { onConflict: "id" })
     .select(
-      "id,biography,artist_photo,cv_entries,hero_title,hero_subtitle,hero_description,hero_image_1,hero_image_2,hero_image_3,hero_image_4,hero_image_5",
+      "id,biography,artist_photo,cv_entries,hero_title,hero_subtitle,hero_description,hero_image_1,hero_image_2,hero_image_3,hero_image_4,hero_image_5,gallery_paintings_description,gallery_jewelry_description",
     )
     .single();
   if (error) throw new Error(error.message);

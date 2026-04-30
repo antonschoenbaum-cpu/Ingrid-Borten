@@ -58,6 +58,10 @@ export type AboutData = {
   heroImage3?: string;
   heroImage4?: string;
   heroImage5?: string;
+  /** Intro på /malerier (CMS). */
+  galleryPaintingsDescription?: string;
+  /** Intro på /smykker (CMS). */
+  galleryJewelryDescription?: string;
 };
 
 export type ContactLinks = {

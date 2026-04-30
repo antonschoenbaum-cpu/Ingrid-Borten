@@ -68,13 +68,11 @@ export default async function EventsPage() {
         )}
       </section>
 
-      <section>
-        <h2 className="mb-6 font-serif text-xl text-ink-muted/90 md:text-2xl">
-          Tidligere begivenheder
-        </h2>
-        {past.length === 0 ? (
-          <p className="text-sm text-ink-muted/80">Ingen tidligere begivenheder endnu.</p>
-        ) : (
+      {past.length > 0 ? (
+        <section>
+          <h2 className="mb-6 font-serif text-xl text-ink-muted/90 md:text-2xl">
+            Tidligere begivenheder
+          </h2>
           <ul className="space-y-8">
             {past.map((e) => (
               <li
@@ -100,8 +98,8 @@ export default async function EventsPage() {
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      ) : null}
     </div>
   );
 }

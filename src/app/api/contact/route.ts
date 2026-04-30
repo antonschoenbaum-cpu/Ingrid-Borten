@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
+import { resendFromHeader } from "@/lib/resend-from";
 
 const CONTACT_RATE_WINDOW_MS = 10 * 60 * 1000;
 const CONTACT_RATE_MAX = 3;
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await resend.emails.send({
-      from: "Kontaktformular <onboarding@resend.dev>",
+      from: resendFromHeader(),
       to: toEmail,
       replyTo: email,
       subject: "Ny besked fra kontaktformular",

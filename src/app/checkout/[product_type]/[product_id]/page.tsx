@@ -36,7 +36,7 @@ export default async function CheckoutPage({ params }: Props) {
       </Link>
 
       <header className="section-rule mt-8 pb-8 pt-8">
-        <h1 className="font-serif text-3xl text-ink md:text-4xl">Checkout</h1>
+        <h1 className="font-serif text-3xl text-ink md:text-4xl">Gennemfør køb</h1>
         <p className="mt-2 text-ink-muted">{product.title}</p>
         <p className="mt-1 font-serif text-xl text-accent">{product.price.toLocaleString("da-DK")} kr.</p>
       </header>
