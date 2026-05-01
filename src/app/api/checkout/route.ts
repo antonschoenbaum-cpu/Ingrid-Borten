@@ -9,6 +9,9 @@ type Body = {
   pickup_point_name?: unknown;
   pickup_point_address?: unknown;
   carrier?: unknown;
+  customer_address?: unknown;
+  customer_zip?: unknown;
+  customer_city?: unknown;
 };
 
 function asString(v: unknown): string {
@@ -40,6 +43,9 @@ export async function POST(req: NextRequest) {
   const pickupPointName = asString(body.pickup_point_name);
   const pickupPointAddress = asString(body.pickup_point_address);
   const carrier = asString(body.carrier);
+  const customerAddress = asString(body.customer_address);
+  const customerZip = asString(body.customer_zip);
+  const customerCity = asString(body.customer_city);
   const pickupPointLabel =
     pickupPointName || pickupPointAddress
       ? stripeMetaValue(
@@ -48,6 +54,15 @@ export async function POST(req: NextRequest) {
       : "";
   if (!isProductType(productTypeRaw) || !productId) {
     return NextResponse.json({ error: "Manglende produktdata." }, { status: 400 });
+  }
+  if (customerAddress.length < 2) {
+    return NextResponse.json({ error: "Angiv vejnavn og nummer til levering." }, { status: 400 });
+  }
+  if (!/^\d{4}$/.test(customerZip)) {
+    return NextResponse.json({ error: "Angiv et gyldigt postnummer (4 cifre)." }, { status: 400 });
+  }
+  if (customerCity.length < 1) {
+    return NextResponse.json({ error: "Angiv by til levering." }, { status: 400 });
   }
 
   const stripeKey = (process.env.STRIPE_SECRET_KEY ?? "").trim();
@@ -89,7 +104,6 @@ export async function POST(req: NextRequest) {
     ],
     success_url: `${origin}/tak?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/${productTypeRaw}/${productId}`,
-    shipping_address_collection: { allowed_countries: ["DK"] },
     metadata: {
       product_type: productTypeRaw,
       product_id: productId,
@@ -98,6 +112,9 @@ export async function POST(req: NextRequest) {
       ...(pickupPointLabel ? { pickup_point_label: pickupPointLabel } : {}),
       carrier,
       checkout_mode: "platform",
+      customer_address: stripeMetaValue(customerAddress),
+      customer_zip: stripeMetaValue(customerZip),
+      customer_city: stripeMetaValue(customerCity),
     },
   };
 

@@ -118,6 +118,9 @@ export async function POST(req: Request) {
     const productTitle = String(
       session.metadata?.product_title ?? session.client_reference_id ?? "Værk",
     );
+    const metaAddr = String(session.metadata?.customer_address ?? "").trim();
+    const metaZip = String(session.metadata?.customer_zip ?? "").trim();
+    const metaCity = String(session.metadata?.customer_city ?? "").trim();
     const order = await createPaidOrder({
       productType: productTypeRaw,
       productId,
@@ -126,9 +129,10 @@ export async function POST(req: Request) {
       currency: String(session.currency ?? "dkk"),
       customerName: String(session.customer_details?.name ?? "Kunde"),
       customerEmail: String(session.customer_details?.email ?? ""),
-      customerAddress: String(session.customer_details?.address?.line1 ?? ""),
-      customerCity: String(session.customer_details?.address?.city ?? ""),
-      customerZip: String(session.customer_details?.address?.postal_code ?? ""),
+      customerAddress:
+        metaAddr || String(session.customer_details?.address?.line1 ?? ""),
+      customerCity: metaCity || String(session.customer_details?.address?.city ?? ""),
+      customerZip: metaZip || String(session.customer_details?.address?.postal_code ?? ""),
       pickupPointId,
       pickupPointName: pickupPointLabel,
       carrier,
