@@ -2,10 +2,6 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 export type ArtistSettings = {
   paymentsEnabled: boolean;
-  stripeAccountId: string | null;
-  bankRegNumber: string;
-  bankAccountNumber: string;
-  onboardingComplete: boolean;
   artistAddress: string;
   artistZip: string;
   artistCity: string;
@@ -45,10 +41,6 @@ function getReadClient(): SupabaseClient {
 export async function readArtistSettings(): Promise<ArtistSettings> {
   const defaults: ArtistSettings = {
     paymentsEnabled: false,
-    stripeAccountId: null,
-    bankRegNumber: "",
-    bankAccountNumber: "",
-    onboardingComplete: false,
     artistAddress: "",
     artistZip: "",
     artistCity: "",
@@ -58,22 +50,15 @@ export async function readArtistSettings(): Promise<ArtistSettings> {
   const supabase = getReadClient();
   const { data, error } = await supabase
     .from("artist_settings")
-    .select(
-      "payments_enabled,stripe_account_id,bank_reg_number,bank_account_number,onboarding_complete,artist_address,artist_zip,artist_city",
-    )
+    .select("payments_enabled,artist_address,artist_zip,artist_city")
     .eq("id", "main")
     .maybeSingle();
   if (error || !data) return defaults;
 
   return {
     paymentsEnabled: data.payments_enabled === true,
-    stripeAccountId: (data.stripe_account_id as string | null | undefined) ?? null,
-    bankRegNumber: (data.bank_reg_number as string | null | undefined) ?? "",
-    bankAccountNumber: (data.bank_account_number as string | null | undefined) ?? "",
-    onboardingComplete: data.onboarding_complete === true,
     artistAddress: (data.artist_address as string | null | undefined) ?? "",
     artistZip: (data.artist_zip as string | null | undefined) ?? "",
     artistCity: (data.artist_city as string | null | undefined) ?? "",
   };
 }
-

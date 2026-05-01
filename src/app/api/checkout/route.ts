@@ -53,9 +53,6 @@ export async function POST(req: NextRequest) {
   const stripeKey = (process.env.STRIPE_SECRET_KEY ?? "").trim();
   if (!stripeKey) return NextResponse.json({ error: "STRIPE_SECRET_KEY mangler." }, { status: 500 });
   const stripe = new Stripe(stripeKey);
-  const isTestStripeKey = stripeKey.startsWith("sk_test_");
-  const allowDirectTestCheckout =
-    isTestStripeKey && (process.env.STRIPE_TEST_MODE_ALLOW_DIRECT ?? "true").toLowerCase() !== "false";
 
   const [product, artistSettings] = await Promise.all([
     readProductById(productTypeRaw, productId),
@@ -67,14 +64,6 @@ export async function POST(req: NextRequest) {
   }
   if (!artistSettings.paymentsEnabled) {
     return NextResponse.json({ error: "Betaling er ikke aktiv." }, { status: 400 });
-  }
-  if (!artistSettings.stripeAccountId && !allowDirectTestCheckout) {
-    return NextResponse.json(
-      {
-        error: "Betaling er desværre ikke tilgængelig lige nu. Kontakt kunstneren direkte.",
-      },
-      { status: 400 },
-    );
   }
 
   const origin =
@@ -108,15 +97,9 @@ export async function POST(req: NextRequest) {
       pickup_point_id: pickupPointId,
       ...(pickupPointLabel ? { pickup_point_label: pickupPointLabel } : {}),
       carrier,
-      checkout_mode: allowDirectTestCheckout && !artistSettings.stripeAccountId ? "test_direct" : "connect",
+      checkout_mode: "platform",
     },
   };
-
-  if (artistSettings.stripeAccountId) {
-    sessionPayload.payment_intent_data = {
-      transfer_data: { destination: artistSettings.stripeAccountId },
-    };
-  }
 
   const session = await stripe.checkout.sessions.create(sessionPayload);
 

@@ -5,7 +5,7 @@ import { Resend } from "resend";
 import { createPaidOrder, markProductSold, updateOrderStatus } from "@/lib/orders";
 import { createShipmentForOrder } from "@/lib/shipmondo";
 import { resendFromHeader } from "@/lib/resend-from";
-import { type ProductType } from "@/lib/webshop";
+import { incrementArtistPayoutBalances, type ProductType } from "@/lib/webshop";
 
 export const dynamic = "force-dynamic";
 
@@ -136,6 +136,8 @@ export async function POST(req: Request) {
     });
 
     await markProductSold(productTypeRaw, productId);
+
+    await incrementArtistPayoutBalances(Number(session.amount_total ?? 0));
 
     await sendBuyerMail({
       to: order.customer_email,

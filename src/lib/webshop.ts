@@ -16,10 +16,6 @@ export type WebshopProduct = {
 
 export type ArtistSettings = {
   paymentsEnabled: boolean;
-  stripeAccountId: string | null;
-  bankRegNumber: string;
-  bankAccountNumber: string;
-  onboardingComplete: boolean;
   shipmondoApiUser: string;
   shipmondoApiKey: string;
   artistAddress: string;
@@ -83,10 +79,6 @@ export async function readArtistSettings(useService = false): Promise<ArtistSett
   const supabase = useService ? getSupabaseServiceClient() : getSupabaseReadClient();
   const defaults: ArtistSettings = {
     paymentsEnabled: false,
-    stripeAccountId: null,
-    bankRegNumber: "",
-    bankAccountNumber: "",
-    onboardingComplete: false,
     shipmondoApiUser: "",
     shipmondoApiKey: "",
     artistAddress: "",
@@ -97,17 +89,13 @@ export async function readArtistSettings(useService = false): Promise<ArtistSett
   const { data, error } = await supabase
     .from("artist_settings")
     .select(
-      "payments_enabled,stripe_account_id,bank_reg_number,bank_account_number,onboarding_complete,shipmondo_api_user,shipmondo_api_key,artist_address,artist_zip,artist_city,bg_color",
+      "payments_enabled,shipmondo_api_user,shipmondo_api_key,artist_address,artist_zip,artist_city,bg_color",
     )
     .eq("id", "main")
     .maybeSingle();
   if (error || !data) return defaults;
   return {
     paymentsEnabled: data.payments_enabled === true,
-    stripeAccountId: (data.stripe_account_id as string | null | undefined) ?? null,
-    bankRegNumber: (data.bank_reg_number as string | null | undefined) ?? "",
-    bankAccountNumber: (data.bank_account_number as string | null | undefined) ?? "",
-    onboardingComplete: data.onboarding_complete === true,
     shipmondoApiUser:
       (data.shipmondo_api_user as string | null | undefined) ??
       (process.env.SHIPMONDO_API_USER ?? ""),
@@ -119,5 +107,27 @@ export async function readArtistSettings(useService = false): Promise<ArtistSett
     artistCity: (data.artist_city as string | null | undefined) ?? "",
     bgColor: normalizeHexColor((data.bg_color as string | null | undefined) ?? "#F5F0EB"),
   };
+}
+
+/** Lægger Stripe-beløb (øre) til kunstnerens afventende saldo og samlet tjent. */
+export async function incrementArtistPayoutBalances(amountOre: number): Promise<void> {
+  if (!Number.isFinite(amountOre) || amountOre <= 0) return;
+  const supabase = getSupabaseServiceClient();
+  const { data, error: selErr } = await supabase
+    .from("artist_settings")
+    .select("pending_payout,total_earned")
+    .eq("id", "main")
+    .maybeSingle();
+  if (selErr) throw new Error(selErr.message);
+  const pending = Number(data?.pending_payout ?? 0);
+  const total = Number(data?.total_earned ?? 0);
+  const { error: upErr } = await supabase
+    .from("artist_settings")
+    .update({
+      pending_payout: pending + amountOre,
+      total_earned: total + amountOre,
+    })
+    .eq("id", "main");
+  if (upErr) throw new Error(upErr.message);
 }
 

@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react";
 
-const STRIPE_ONBOARDING_SESSION_KEY = "stripe_connect_onboarding_complete";
-
 type SettingsResponse = {
   paymentsEnabled: boolean;
-  stripeAccountId: string | null;
-  onboardingComplete: boolean;
+  pendingPayoutOre: number;
+  totalEarnedOre: number;
+  payoutMobile: string;
   artistAddress: string;
   artistZip: string;
   artistCity: string;
@@ -15,18 +14,29 @@ type SettingsResponse = {
 
 type ApiError = { error?: string };
 
+function formatOreAsDkk(ore: number): string {
+  if (!Number.isFinite(ore)) return "0";
+  return (ore / 100).toLocaleString("da-DK", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
 export function PaymentSettingsForm() {
   const [paymentsEnabled, setPaymentsEnabled] = useState(false);
+  const [pendingPayoutOre, setPendingPayoutOre] = useState(0);
+  const [totalEarnedOre, setTotalEarnedOre] = useState(0);
+  const [payoutMobile, setPayoutMobile] = useState("");
   const [artistAddress, setArtistAddress] = useState("");
   const [artistZip, setArtistZip] = useState("");
   const [artistCity, setArtistCity] = useState("");
-  const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
-  const [stripeOnboardingReturned, setStripeOnboardingReturned] = useState(false);
   const [togglePending, setTogglePending] = useState(false);
-  const [stripeConnectPending, setStripeConnectPending] = useState(false);
+  const [mobilePending, setMobilePending] = useState(false);
+  const [payoutRequestPending, setPayoutRequestPending] = useState(false);
   const [addressPending, setAddressPending] = useState(false);
   const [toggleMsg, setToggleMsg] = useState<string | null>(null);
-  const [stripeConnectError, setStripeConnectError] = useState<string | null>(null);
+  const [mobileMsg, setMobileMsg] = useState<string | null>(null);
+  const [payoutRequestMsg, setPayoutRequestMsg] = useState<string | null>(null);
   const [addressMsg, setAddressMsg] = useState<string | null>(null);
   const [bgColor, setBgColor] = useState("#F5F0EB");
   const [bgColorPending, setBgColorPending] = useState(false);
@@ -34,48 +44,32 @@ export function PaymentSettingsForm() {
   const [bgColorMsg, setBgColorMsg] = useState<string | null>(null);
   const [bgColorError, setBgColorError] = useState<string | null>(null);
   const [toggleError, setToggleError] = useState<string | null>(null);
+  const [mobileError, setMobileError] = useState<string | null>(null);
+  const [payoutRequestError, setPayoutRequestError] = useState<string | null>(null);
   const [addressError, setAddressError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
-      let stripeOnboardingBadge = false;
-      if (typeof window !== "undefined") {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get("onboarding") === "complete") {
-          sessionStorage.setItem(STRIPE_ONBOARDING_SESSION_KEY, "1");
-          window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
-          stripeOnboardingBadge = true;
-        } else if (sessionStorage.getItem(STRIPE_ONBOARDING_SESSION_KEY) === "1") {
-          stripeOnboardingBadge = true;
-        }
-      }
-
       try {
         const [settingsRes, colorRes] = await Promise.all([
-          fetch("/api/admin/stripe-connect", { cache: "no-store" }),
+          fetch("/api/admin/payment-settings", { cache: "no-store" }),
           fetch("/api/admin/bg-color", { cache: "no-store" }),
         ]);
-        if (!settingsRes.ok) {
-          setStripeOnboardingReturned(stripeOnboardingBadge);
-          return;
-        }
+        if (!settingsRes.ok) return;
         const data = (await settingsRes.json()) as SettingsResponse;
         setPaymentsEnabled(data.paymentsEnabled === true);
+        setPendingPayoutOre(Number(data.pendingPayoutOre ?? 0));
+        setTotalEarnedOre(Number(data.totalEarnedOre ?? 0));
+        setPayoutMobile(data.payoutMobile ?? "");
         setArtistAddress(data.artistAddress ?? "");
         setArtistZip(data.artistZip ?? "");
         setArtistCity(data.artistCity ?? "");
-        setStripeAccountId(data.stripeAccountId ?? null);
-        if (data.onboardingComplete === true) {
-          sessionStorage.setItem(STRIPE_ONBOARDING_SESSION_KEY, "1");
-          stripeOnboardingBadge = true;
-        }
-        setStripeOnboardingReturned(stripeOnboardingBadge);
         if (colorRes.ok) {
           const colorData = (await colorRes.json()) as { bgColor?: string };
           if (typeof colorData.bgColor === "string") setBgColor(colorData.bgColor);
         }
       } catch {
-        setStripeOnboardingReturned(stripeOnboardingBadge);
+        // Ignoreres i UI.
       }
     }
     void load();
@@ -86,7 +80,7 @@ export function PaymentSettingsForm() {
     setToggleError(null);
     setToggleMsg(null);
     try {
-      const res = await fetch("/api/admin/stripe-connect", {
+      const res = await fetch("/api/admin/payment-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ paymentsEnabled: nextValue }),
@@ -105,25 +99,53 @@ export function PaymentSettingsForm() {
     }
   }
 
-  async function startStripeConnect() {
-    setStripeConnectPending(true);
-    setStripeConnectError(null);
+  async function saveMobilePay(e: React.FormEvent) {
+    e.preventDefault();
+    setMobilePending(true);
+    setMobileError(null);
+    setMobileMsg(null);
+    const digits = payoutMobile.replace(/\D/g, "").slice(0, 8);
     try {
-      const res = await fetch("/api/admin/stripe-connect", {
+      const res = await fetch("/api/admin/payment-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ connectStripe: true }),
+        body: JSON.stringify({ payoutMobile: digits }),
       });
-      const data = (await res.json().catch(() => ({}))) as { error?: string; url?: string };
-      if (!res.ok || typeof data.url !== "string" || !data.url.length) {
-        setStripeConnectError(data.error ?? "Kunne ikke starte Stripe-tilslutning.");
+      const data = (await res.json().catch(() => ({}))) as ApiError;
+      if (!res.ok) {
+        setMobileError(data.error ?? "Kunne ikke gemme MobilePay-nummer.");
         return;
       }
-      window.location.assign(data.url);
+      setPayoutMobile(digits);
+      setMobileMsg("MobilePay-nummer gemt.");
     } catch {
-      setStripeConnectError("Kunne ikke starte Stripe-tilslutning.");
+      setMobileError("Kunne ikke gemme MobilePay-nummer.");
     } finally {
-      setStripeConnectPending(false);
+      setMobilePending(false);
+    }
+  }
+
+  async function requestPayout() {
+    setPayoutRequestPending(true);
+    setPayoutRequestError(null);
+    setPayoutRequestMsg(null);
+    try {
+      const res = await fetch("/api/admin/payment-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestPayout: true }),
+      });
+      const data = (await res.json().catch(() => ({}))) as ApiError;
+      if (!res.ok) {
+        setPayoutRequestError(data.error ?? "Kunne ikke anmode om udbetaling.");
+        return;
+      }
+      setPendingPayoutOre(0);
+      setPayoutRequestMsg("Anmodning sendt. Du hører fra os ved udbetaling.");
+    } catch {
+      setPayoutRequestError("Kunne ikke anmode om udbetaling.");
+    } finally {
+      setPayoutRequestPending(false);
     }
   }
 
@@ -133,7 +155,7 @@ export function PaymentSettingsForm() {
     setAddressError(null);
     setAddressMsg(null);
     try {
-      const res = await fetch("/api/admin/stripe-connect", {
+      const res = await fetch("/api/admin/payment-settings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ artistAddress, artistZip, artistCity }),
@@ -197,6 +219,8 @@ export function PaymentSettingsForm() {
     }
   }
 
+  const canRequestPayout = pendingPayoutOre > 0 && payoutMobile.replace(/\D/g, "").length === 8;
+
   return (
     <div className="space-y-8">
       <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">
@@ -235,35 +259,74 @@ export function PaymentSettingsForm() {
       </section>
 
       {paymentsEnabled ? (
-        <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">
-          <h2 className="font-serif text-xl text-ink">Udbetaling</h2>
-          <p className="mt-2 text-sm text-ink-muted">
-            Tilslut din bankkonto og færdiggør verificering hos Stripe. Stripe indsamler og
-            opbevarer alle bankoplysninger — vi gemmer ikke kontonummer på serveren.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              className="btn-outline"
-              disabled={stripeConnectPending}
-              onClick={() => void startStripeConnect()}
-            >
-              {stripeConnectPending ? "Åbner Stripe..." : "Tilslut din bankkonto via Stripe"}
-            </button>
-          </div>
-          {stripeOnboardingReturned ? (
-            <p className="mt-4 inline-flex items-center gap-2 rounded border border-sage-deep/40 bg-sage-deep/10 px-3 py-1.5 text-sm text-sage-deep">
-              <span aria-hidden>✓</span> Betalingskonto tilknyttet
+        <>
+          <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">
+            <h2 className="font-serif text-xl text-ink">MobilePay-nummer</h2>
+            <p className="mt-2 text-sm text-ink-muted">
+              Indtast dit MobilePay-nummer så vi kan sende dig pengene når du har solgt noget.
             </p>
-          ) : null}
-          {stripeAccountId && !stripeOnboardingReturned ? (
-            <p className="mt-3 text-sm text-ink-muted">
-              Du har startet tilslutning. Klik knappen igen for at fortsætte eller opdatere
-              oplysninger hos Stripe.
+            <form onSubmit={saveMobilePay} className="mt-6 flex flex-wrap items-end gap-4">
+              <label className="block min-w-[12rem] text-sm text-ink-muted">
+                Telefonnummer (8 cifre)
+                <input
+                  value={payoutMobile}
+                  onChange={(e) => setPayoutMobile(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  inputMode="numeric"
+                  className="mt-1 w-full border border-secondary/60 bg-paper px-3 py-2 text-sm text-ink"
+                  placeholder="12345678"
+                  maxLength={8}
+                  autoComplete="tel-national"
+                />
+              </label>
+              <button type="submit" className="btn-outline h-10" disabled={mobilePending}>
+                {mobilePending ? "Gemmer..." : "Gem"}
+              </button>
+            </form>
+            {mobileMsg ? <p className="mt-3 text-sm text-accent">{mobileMsg}</p> : null}
+            {mobileError ? <p className="mt-3 text-sm text-rose-dust">{mobileError}</p> : null}
+          </section>
+
+          <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">
+            <h2 className="font-serif text-xl text-ink">Din saldo</h2>
+            <ul className="mt-4 space-y-2 text-sm text-ink">
+              <li>
+                <span className="text-ink-muted">Afventende udbetaling:</span>{" "}
+                <strong>{formatOreAsDkk(pendingPayoutOre)} kr.</strong>
+              </li>
+              <li>
+                <span className="text-ink-muted">Samlet tjent:</span>{" "}
+                <strong>{formatOreAsDkk(totalEarnedOre)} kr.</strong>
+              </li>
+            </ul>
+          </section>
+
+          <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">
+            <h2 className="font-serif text-xl text-ink">Anmod om udbetaling</h2>
+            <p className="mt-2 text-sm text-ink-muted">
+              Vi sender en mail til butikken med dit MobilePay-nummer og beløbet. Afventende saldo
+              nulstilles når du har sendt anmodningen.
             </p>
-          ) : null}
-          {stripeConnectError ? <p className="mt-3 text-sm text-rose-dust">{stripeConnectError}</p> : null}
-        </section>
+            <div className="mt-6">
+              <button
+                type="button"
+                className="btn-outline"
+                disabled={payoutRequestPending || !canRequestPayout}
+                onClick={() => void requestPayout()}
+              >
+                {payoutRequestPending ? "Sender..." : "Anmod om udbetaling"}
+              </button>
+            </div>
+            {!canRequestPayout && pendingPayoutOre > 0 ? (
+              <p className="mt-3 text-sm text-ink-muted">
+                Gem et gyldigt 8-cifret MobilePay-nummer ovenfor for at kunne anmode.
+              </p>
+            ) : null}
+            {payoutRequestMsg ? <p className="mt-3 text-sm text-accent">{payoutRequestMsg}</p> : null}
+            {payoutRequestError ? (
+              <p className="mt-3 text-sm text-rose-dust">{payoutRequestError}</p>
+            ) : null}
+          </section>
+        </>
       ) : null}
 
       <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">
@@ -351,4 +414,3 @@ export function PaymentSettingsForm() {
     </div>
   );
 }
-

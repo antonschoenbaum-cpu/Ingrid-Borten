@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import { Resend } from "resend";
 import { requireAdmin } from "@/lib/require-admin";
 import { createClient } from "@supabase/supabase-js";
+import { resendFromHeader } from "@/lib/resend-from";
 
 type Payload = {
   paymentsEnabled?: unknown;
-  connectStripe?: unknown;
+  payoutMobile?: unknown;
   artistAddress?: unknown;
   artistZip?: unknown;
   artistCity?: unknown;
+  requestPayout?: unknown;
 };
 
 function asTrimmedString(v: unknown): string {
@@ -30,59 +32,11 @@ function getSupabaseAdmin() {
   });
 }
 
-function getStripeClient() {
-  const key = (process.env.STRIPE_SECRET_KEY ?? "").trim();
-  if (!key) throw new Error("STRIPE_SECRET_KEY mangler.");
-  return new Stripe(key);
-}
-
-function getPublicSiteUrl(): string {
-  const raw = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim().replace(/\/$/, "");
-  if (!raw) {
-    throw new Error("NEXT_PUBLIC_SITE_URL mangler (bruges til Stripe onboarding-URL'er).");
-  }
-  return raw;
-}
-
-async function createStripeOnboardingLink(): Promise<string> {
-  const stripe = getStripeClient();
-  const supabase = getSupabaseAdmin();
-  const siteUrl = getPublicSiteUrl();
-
-  const { data: existingRow, error: selectError } = await supabase
-    .from("artist_settings")
-    .select("stripe_account_id")
-    .eq("id", "main")
-    .maybeSingle();
-  if (selectError) throw new Error(selectError.message);
-
-  let accountId = (existingRow?.stripe_account_id as string | null | undefined) ?? null;
-
-  if (!accountId) {
-    const account = await stripe.accounts.create({
-      country: "DK",
-      type: "express",
-      capabilities: {
-        card_payments: { requested: true },
-        transfers: { requested: true },
-      },
-    });
-    accountId = account.id;
-    const { error: upsertError } = await supabase.from("artist_settings").upsert(
-      { id: "main", stripe_account_id: accountId },
-      { onConflict: "id" },
-    );
-    if (upsertError) throw new Error(upsertError.message);
-  }
-
-  const accountLink = await stripe.accountLinks.create({
-    account: accountId,
-    refresh_url: `${siteUrl}/admin/betaling`,
-    return_url: `${siteUrl}/admin/betaling?onboarding=complete`,
-    type: "account_onboarding",
+function dkkFromOre(ore: number): string {
+  return (ore / 100).toLocaleString("da-DK", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
   });
-
-  return accountLink.url;
 }
 
 export async function POST(req: NextRequest) {
@@ -96,10 +50,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ugyldig JSON." }, { status: 400 });
   }
 
-  if (body.connectStripe === true) {
+  if (body.requestPayout === true) {
     try {
-      const url = await createStripeOnboardingLink();
-      return NextResponse.json({ url });
+      const supabase = getSupabaseAdmin();
+      const { data: row, error: selErr } = await supabase
+        .from("artist_settings")
+        .select("pending_payout,payout_mobile")
+        .eq("id", "main")
+        .maybeSingle();
+      if (selErr) throw new Error(selErr.message);
+      const pendingOre = Number(row?.pending_payout ?? 0);
+      const mobile = asTrimmedString(row?.payout_mobile as string | undefined);
+      if (!Number.isFinite(pendingOre) || pendingOre <= 0) {
+        return NextResponse.json({ error: "Der er ingen afventende udbetaling." }, { status: 400 });
+      }
+      if (mobile.length !== 8) {
+        return NextResponse.json(
+          { error: "Udfyld et gyldigt 8-cifret MobilePay-nummer først." },
+          { status: 400 },
+        );
+      }
+
+      const key = (process.env.RESEND_API_KEY ?? "").trim();
+      const to = (process.env.CONTACT_EMAIL ?? "").trim();
+      const artistName = (process.env.ARTIST_NAME ?? "Kunstner").trim() || "Kunstner";
+      if (!key || !to) {
+        throw new Error("RESEND_API_KEY eller CONTACT_EMAIL mangler.");
+      }
+      const resend = new Resend(key);
+      const kr = dkkFromOre(pendingOre);
+      await resend.emails.send({
+        from: resendFromHeader(),
+        to,
+        subject: `Udbetalingsanmodning — ${artistName}`,
+        text: `Kunstner ${artistName} anmoder om udbetaling af ${kr} kr. til MobilePay ${mobile}`,
+      });
+
+      const { error: upErr } = await supabase
+        .from("artist_settings")
+        .update({ pending_payout: 0 })
+        .eq("id", "main");
+      if (upErr) throw new Error(upErr.message);
+
+      return NextResponse.json({ ok: true });
     } catch (error) {
       const msg = error instanceof Error ? error.message : "Ukendt fejl";
       return NextResponse.json({ error: msg }, { status: 500 });
@@ -107,9 +100,17 @@ export async function POST(req: NextRequest) {
   }
 
   const paymentsEnabled = typeof body.paymentsEnabled === "boolean" ? body.paymentsEnabled : undefined;
+  const payoutMobileRaw = normalizeDigits(asTrimmedString(body.payoutMobile));
+  const wantsPayoutMobile = body.payoutMobile !== undefined;
   const artistAddress = asTrimmedString(body.artistAddress);
   const artistZip = normalizeDigits(asTrimmedString(body.artistZip));
   const artistCity = asTrimmedString(body.artistCity);
+
+  if (wantsPayoutMobile) {
+    if (payoutMobileRaw.length !== 8) {
+      return NextResponse.json({ error: "MobilePay-nummer skal være præcis 8 cifre." }, { status: 400 });
+    }
+  }
 
   const wantsAddressSetup = artistAddress || artistZip || artistCity;
   if (wantsAddressSetup) {
@@ -123,17 +124,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const supabase = getSupabaseAdmin();
-    const { data: existingRow, error: selectError } = await supabase
-      .from("artist_settings")
-      .select("stripe_account_id")
-      .eq("id", "main")
-      .maybeSingle();
-    if (selectError) throw new Error(selectError.message);
-
-    const stripeAccountId = (existingRow?.stripe_account_id as string | null | undefined) ?? null;
-
     const payload: Record<string, unknown> = { id: "main" };
     if (paymentsEnabled !== undefined) payload.payments_enabled = paymentsEnabled;
+    if (wantsPayoutMobile) payload.payout_mobile = payoutMobileRaw;
     if (wantsAddressSetup) {
       payload.artist_address = artistAddress;
       payload.artist_zip = artistZip;
@@ -143,10 +136,7 @@ export async function POST(req: NextRequest) {
     const { error: upsertError } = await supabase.from("artist_settings").upsert(payload, { onConflict: "id" });
     if (upsertError) throw new Error(upsertError.message);
 
-    return NextResponse.json({
-      ok: true,
-      stripeAccountId,
-    });
+    return NextResponse.json({ ok: true });
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Ukendt fejl";
     return NextResponse.json({ error: msg }, { status: 500 });
@@ -161,17 +151,16 @@ export async function GET() {
     const { data, error } = await supabase
       .from("artist_settings")
       .select(
-        "payments_enabled,stripe_account_id,bank_reg_number,bank_account_number,onboarding_complete,artist_address,artist_zip,artist_city",
+        "payments_enabled,pending_payout,total_earned,payout_mobile,artist_address,artist_zip,artist_city",
       )
       .eq("id", "main")
       .maybeSingle();
     if (error) throw new Error(error.message);
     return NextResponse.json({
       paymentsEnabled: data?.payments_enabled === true,
-      stripeAccountId: (data?.stripe_account_id as string | null | undefined) ?? null,
-      bankRegNumber: (data?.bank_reg_number as string | null | undefined) ?? "",
-      bankAccountNumber: (data?.bank_account_number as string | null | undefined) ?? "",
-      onboardingComplete: data?.onboarding_complete === true,
+      pendingPayoutOre: Number(data?.pending_payout ?? 0),
+      totalEarnedOre: Number(data?.total_earned ?? 0),
+      payoutMobile: (data?.payout_mobile as string | null | undefined) ?? "",
       artistAddress: (data?.artist_address as string | null | undefined) ?? "",
       artistZip: (data?.artist_zip as string | null | undefined) ?? "",
       artistCity: (data?.artist_city as string | null | undefined) ?? "",
