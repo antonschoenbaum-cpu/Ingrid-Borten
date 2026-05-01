@@ -15,7 +15,9 @@ export async function GET(req: NextRequest) {
   const url = new URL("https://app.shipmondo.com/api/public/v3/pickup_points");
   url.searchParams.set("zip_code", zipcode);
   url.searchParams.set("country_code", "DK");
-  url.searchParams.set("carriers", "gls,postnord,dao");
+  for (const carrier of ["gls", "dao", "postnord"] as const) {
+    url.searchParams.append("carriers[]", carrier);
+  }
 
   const auth = Buffer.from(`${user}:${key}`).toString("base64");
   const res = await fetch(url, {
