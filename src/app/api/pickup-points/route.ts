@@ -3,14 +3,19 @@ import { NextRequest, NextResponse } from "next/server";
 /** Shipmondo v3 pickup_points: én `carrier_code` pr. kald (jf. API / PHP-SDK). */
 const PICKUP_CARRIER_CODES = ["gls", "dao", "pdk"] as const;
 
-function parsePickupPayload(data: unknown): Array<Record<string, unknown>> {
-  const obj = data as {
-    output?: Array<Record<string, unknown>>;
-    items?: Array<Record<string, unknown>>;
+type ShipmondoPickupRow = Record<string, unknown>;
+
+function mapPickupPoint(p: ShipmondoPickupRow) {
+  const opening = p.opening_hours;
+  return {
+    id: String(p.id ?? ""),
+    name: String(p.name || p.company_name || "Pakkeshop"),
+    address: String(p.address ?? ""),
+    city: String(p.city ?? ""),
+    zipcode: String(p.zipcode ?? ""),
+    carrier: String(p.carrier_code ?? ""),
+    opening_hours: Array.isArray(opening) ? opening : [],
   };
-  if (Array.isArray(obj.output)) return obj.output;
-  if (Array.isArray(obj.items)) return obj.items;
-  return [];
 }
 
 export async function GET(req: NextRequest) {
@@ -26,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
 
   const auth = Buffer.from(`${user}:${key}`).toString("base64");
-  const merged: Array<Record<string, unknown>> = [];
+  const merged: ShipmondoPickupRow[] = [];
   const errors: string[] = [];
 
   for (const carrierCode of PICKUP_CARRIER_CODES) {
@@ -34,8 +39,6 @@ export async function GET(req: NextRequest) {
     url.searchParams.append("zipcode", zipcode);
     url.searchParams.append("country_code", "DK");
     url.searchParams.append("carrier_code", carrierCode);
-
-    console.log("[pickup-points] Shipmondo URL:", url.toString());
 
     const res = await fetch(url, {
       method: "GET",
@@ -46,35 +49,27 @@ export async function GET(req: NextRequest) {
       cache: "no-store",
     });
 
-    console.log("[pickup-points] Shipmondo response status:", res.status, "carrier_code:", carrierCode);
-
     if (!res.ok) {
       const err = await res.text().catch(() => "");
       errors.push(`${carrierCode}: ${res.status} ${err}`);
       continue;
     }
 
-    const data = (await res.json().catch(() => ({}))) as unknown;
-    merged.push(...parsePickupPayload(data));
+    const data: unknown = await res.json().catch(() => null);
+    const rows = Array.isArray(data) ? (data as ShipmondoPickupRow[]) : [];
+    merged.push(...rows);
   }
 
   if (merged.length === 0 && errors.length > 0) {
     return NextResponse.json(
-      { error: `Kunne ikke hente pakkeshops: ${errors.join(" | ")}` },
+      { error: `Kunne ikke hente pakkeshops: ${errors.join(" | ")}`, points: [] },
       { status: 502 },
     );
   }
 
   const seen = new Set<string>();
   const points = merged
-    .map((p) => ({
-      id: String(p.id ?? ""),
-      name: String(p.name ?? p.company_name ?? "Pakkeshop"),
-      address: String(p.address1 ?? p.address ?? ""),
-      zipcode: String(p.zip_code ?? p.zipcode ?? ""),
-      city: String(p.city ?? ""),
-      carrier: String(p.carrier_code ?? p.carrier ?? "").toLowerCase(),
-    }))
+    .map(mapPickupPoint)
     .filter((p) => {
       if (!p.id || seen.has(p.id)) return false;
       seen.add(p.id);
