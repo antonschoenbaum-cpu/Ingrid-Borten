@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 
+const STRIPE_ONBOARDING_SESSION_KEY = "stripe_connect_onboarding_complete";
+
 type SettingsResponse = {
   paymentsEnabled: boolean;
   stripeAccountId: string | null;
-  bankRegNumber: string;
-  bankAccountNumber: string;
+  onboardingComplete: boolean;
   artistAddress: string;
   artistZip: string;
   artistCity: string;
@@ -16,17 +17,16 @@ type ApiError = { error?: string };
 
 export function PaymentSettingsForm() {
   const [paymentsEnabled, setPaymentsEnabled] = useState(false);
-  const [regNumber, setRegNumber] = useState("");
-  const [accountNumber, setAccountNumber] = useState("");
   const [artistAddress, setArtistAddress] = useState("");
   const [artistZip, setArtistZip] = useState("");
   const [artistCity, setArtistCity] = useState("");
   const [stripeAccountId, setStripeAccountId] = useState<string | null>(null);
+  const [stripeOnboardingReturned, setStripeOnboardingReturned] = useState(false);
   const [togglePending, setTogglePending] = useState(false);
-  const [paymentPending, setPaymentPending] = useState(false);
+  const [stripeConnectPending, setStripeConnectPending] = useState(false);
   const [addressPending, setAddressPending] = useState(false);
   const [toggleMsg, setToggleMsg] = useState<string | null>(null);
-  const [paymentMsg, setPaymentMsg] = useState<string | null>(null);
+  const [stripeConnectError, setStripeConnectError] = useState<string | null>(null);
   const [addressMsg, setAddressMsg] = useState<string | null>(null);
   const [bgColor, setBgColor] = useState("#F5F0EB");
   const [bgColorPending, setBgColorPending] = useState(false);
@@ -34,31 +34,48 @@ export function PaymentSettingsForm() {
   const [bgColorMsg, setBgColorMsg] = useState<string | null>(null);
   const [bgColorError, setBgColorError] = useState<string | null>(null);
   const [toggleError, setToggleError] = useState<string | null>(null);
-  const [paymentError, setPaymentError] = useState<string | null>(null);
   const [addressError, setAddressError] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
+      let stripeOnboardingBadge = false;
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("onboarding") === "complete") {
+          sessionStorage.setItem(STRIPE_ONBOARDING_SESSION_KEY, "1");
+          window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
+          stripeOnboardingBadge = true;
+        } else if (sessionStorage.getItem(STRIPE_ONBOARDING_SESSION_KEY) === "1") {
+          stripeOnboardingBadge = true;
+        }
+      }
+
       try {
         const [settingsRes, colorRes] = await Promise.all([
           fetch("/api/admin/stripe-connect", { cache: "no-store" }),
           fetch("/api/admin/bg-color", { cache: "no-store" }),
         ]);
-        if (!settingsRes.ok) return;
+        if (!settingsRes.ok) {
+          setStripeOnboardingReturned(stripeOnboardingBadge);
+          return;
+        }
         const data = (await settingsRes.json()) as SettingsResponse;
         setPaymentsEnabled(data.paymentsEnabled === true);
-        setRegNumber(data.bankRegNumber ?? "");
-        setAccountNumber(data.bankAccountNumber ?? "");
         setArtistAddress(data.artistAddress ?? "");
         setArtistZip(data.artistZip ?? "");
         setArtistCity(data.artistCity ?? "");
         setStripeAccountId(data.stripeAccountId ?? null);
+        if (data.onboardingComplete === true) {
+          sessionStorage.setItem(STRIPE_ONBOARDING_SESSION_KEY, "1");
+          stripeOnboardingBadge = true;
+        }
+        setStripeOnboardingReturned(stripeOnboardingBadge);
         if (colorRes.ok) {
           const colorData = (await colorRes.json()) as { bgColor?: string };
           if (typeof colorData.bgColor === "string") setBgColor(colorData.bgColor);
         }
       } catch {
-        // Ignoreres i UI.
+        setStripeOnboardingReturned(stripeOnboardingBadge);
       }
     }
     void load();
@@ -88,31 +105,25 @@ export function PaymentSettingsForm() {
     }
   }
 
-  async function saveBank(e: React.FormEvent) {
-    e.preventDefault();
-    setPaymentPending(true);
-    setPaymentError(null);
-    setPaymentMsg(null);
+  async function startStripeConnect() {
+    setStripeConnectPending(true);
+    setStripeConnectError(null);
     try {
       const res = await fetch("/api/admin/stripe-connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ regNumber, accountNumber }),
+        body: JSON.stringify({ connectStripe: true }),
       });
-      const data = (await res.json().catch(() => ({}))) as {
-        error?: string;
-        stripeAccountId?: string | null;
-      };
-      if (!res.ok) {
-        setPaymentError(data.error ?? "Kunne ikke gemme bankoplysninger.");
+      const data = (await res.json().catch(() => ({}))) as { error?: string; url?: string };
+      if (!res.ok || typeof data.url !== "string" || !data.url.length) {
+        setStripeConnectError(data.error ?? "Kunne ikke starte Stripe-tilslutning.");
         return;
       }
-      setStripeAccountId(data.stripeAccountId ?? null);
-      setPaymentMsg("Bankoplysninger er gemt.");
+      window.location.assign(data.url);
     } catch {
-      setPaymentError("Kunne ikke gemme bankoplysninger.");
+      setStripeConnectError("Kunne ikke starte Stripe-tilslutning.");
     } finally {
-      setPaymentPending(false);
+      setStripeConnectPending(false);
     }
   }
 
@@ -225,53 +236,33 @@ export function PaymentSettingsForm() {
 
       {paymentsEnabled ? (
         <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">
-          <h2 className="font-serif text-xl text-ink">Bankoplysninger</h2>
+          <h2 className="font-serif text-xl text-ink">Udbetaling</h2>
           <p className="mt-2 text-sm text-ink-muted">
-            Indtast dine bankoplysninger så vi kan sende pengene direkte til din konto. Dine
-            oplysninger gemmes sikkert og bruges kun til at udbetale dine salg.
+            Tilslut din bankkonto og færdiggør verificering hos Stripe. Stripe indsamler og
+            opbevarer alle bankoplysninger — vi gemmer ikke kontonummer på serveren.
           </p>
-          <form onSubmit={saveBank} className="mt-6 grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
-            <label className="block text-sm text-ink-muted">
-              Registreringsnummer
-              <input
-                value={regNumber}
-                onChange={(e) => setRegNumber(e.target.value.replace(/\D/g, "").slice(0, 4))}
-                inputMode="numeric"
-                className="mt-1 w-full border border-secondary/60 bg-paper px-3 py-2 text-sm text-ink"
-                placeholder="1234"
-                maxLength={4}
-                required
-              />
-              <span className="mt-1 block text-xs text-ink-muted/90">
-                De første 4 cifre på dit kontonummer
-              </span>
-            </label>
-            <label className="block text-sm text-ink-muted">
-              Kontonummer
-              <input
-                value={accountNumber}
-                onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                inputMode="numeric"
-                className="mt-1 w-full border border-secondary/60 bg-paper px-3 py-2 text-sm text-ink"
-                placeholder="12345678"
-                maxLength={10}
-                required
-              />
-              <span className="mt-1 block text-xs text-ink-muted/90">
-                Findes på din netbank eller kontoudtog
-              </span>
-            </label>
-            <button type="submit" className="btn-outline h-10" disabled={paymentPending}>
-              {paymentPending ? "Gemmer..." : "Gem"}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              className="btn-outline"
+              disabled={stripeConnectPending}
+              onClick={() => void startStripeConnect()}
+            >
+              {stripeConnectPending ? "Åbner Stripe..." : "Tilslut din bankkonto via Stripe"}
             </button>
-          </form>
-          {stripeAccountId ? (
-            <p className="mt-3 inline-flex items-center gap-2 rounded border border-sage-deep/40 bg-sage-deep/10 px-3 py-1.5 text-sm text-sage-deep">
+          </div>
+          {stripeOnboardingReturned ? (
+            <p className="mt-4 inline-flex items-center gap-2 rounded border border-sage-deep/40 bg-sage-deep/10 px-3 py-1.5 text-sm text-sage-deep">
               <span aria-hidden>✓</span> Betalingskonto tilknyttet
             </p>
           ) : null}
-          {paymentMsg ? <p className="mt-3 text-sm text-accent">{paymentMsg}</p> : null}
-          {paymentError ? <p className="mt-3 text-sm text-rose-dust">{paymentError}</p> : null}
+          {stripeAccountId && !stripeOnboardingReturned ? (
+            <p className="mt-3 text-sm text-ink-muted">
+              Du har startet tilslutning. Klik knappen igen for at fortsætte eller opdatere
+              oplysninger hos Stripe.
+            </p>
+          ) : null}
+          {stripeConnectError ? <p className="mt-3 text-sm text-rose-dust">{stripeConnectError}</p> : null}
         </section>
       ) : null}
 

@@ -5,8 +5,7 @@ import { createClient } from "@supabase/supabase-js";
 
 type Payload = {
   paymentsEnabled?: unknown;
-  regNumber?: unknown;
-  accountNumber?: unknown;
+  connectStripe?: unknown;
   artistAddress?: unknown;
   artistZip?: unknown;
   artistCity?: unknown;
@@ -37,53 +36,53 @@ function getStripeClient() {
   return new Stripe(key);
 }
 
-async function getOrCreateStripeAccountId(params: {
-  regNumber: string;
-  accountNumber: string;
-  existingStripeAccountId: string | null;
-}) {
+function getPublicSiteUrl(): string {
+  const raw = (process.env.NEXT_PUBLIC_SITE_URL ?? "").trim().replace(/\/$/, "");
+  if (!raw) {
+    throw new Error("NEXT_PUBLIC_SITE_URL mangler (bruges til Stripe onboarding-URL'er).");
+  }
+  return raw;
+}
+
+async function createStripeOnboardingLink(): Promise<string> {
   const stripe = getStripeClient();
-  const { regNumber, accountNumber, existingStripeAccountId } = params;
-  if (existingStripeAccountId) {
-    const token = await stripe.tokens.create({
-      bank_account: {
-        country: "DK",
-        currency: "dkk",
-        account_holder_name: (process.env.ARTIST_NAME ?? "Kunstner").trim() || "Kunstner",
-        account_holder_type: "individual",
-        account_number: `${regNumber}${accountNumber}`,
+  const supabase = getSupabaseAdmin();
+  const siteUrl = getPublicSiteUrl();
+
+  const { data: existingRow, error: selectError } = await supabase
+    .from("artist_settings")
+    .select("stripe_account_id")
+    .eq("id", "main")
+    .maybeSingle();
+  if (selectError) throw new Error(selectError.message);
+
+  let accountId = (existingRow?.stripe_account_id as string | null | undefined) ?? null;
+
+  if (!accountId) {
+    const account = await stripe.accounts.create({
+      country: "DK",
+      type: "express",
+      capabilities: {
+        card_payments: { requested: true },
+        transfers: { requested: true },
       },
     });
-    await stripe.accounts.createExternalAccount(existingStripeAccountId, {
-      external_account: token.id,
-      default_for_currency: true,
-    });
-    return existingStripeAccountId;
+    accountId = account.id;
+    const { error: upsertError } = await supabase.from("artist_settings").upsert(
+      { id: "main", stripe_account_id: accountId },
+      { onConflict: "id" },
+    );
+    if (upsertError) throw new Error(upsertError.message);
   }
 
-  const account = await stripe.accounts.create({
-    type: "custom",
-    country: "DK",
-    email: (process.env.CONTACT_EMAIL ?? undefined) || undefined,
-    capabilities: {
-      transfers: { requested: true },
-      card_payments: { requested: true },
-    },
-    external_account: {
-      object: "bank_account",
-      country: "DK",
-      currency: "dkk",
-      account_holder_name: (process.env.ARTIST_NAME ?? "Kunstner").trim() || "Kunstner",
-      account_holder_type: "individual",
-      account_number: `${regNumber}${accountNumber}`,
-    },
-    business_type: "individual",
-    tos_acceptance: {
-      service_agreement: "recipient",
-    },
+  const accountLink = await stripe.accountLinks.create({
+    account: accountId,
+    refresh_url: `${siteUrl}/admin/betaling`,
+    return_url: `${siteUrl}/admin/betaling?onboarding=complete`,
+    type: "account_onboarding",
   });
 
-  return account.id;
+  return accountLink.url;
 }
 
 export async function POST(req: NextRequest) {
@@ -97,22 +96,20 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ugyldig JSON." }, { status: 400 });
   }
 
-  const regNumber = normalizeDigits(asTrimmedString(body.regNumber));
-  const accountNumber = normalizeDigits(asTrimmedString(body.accountNumber));
+  if (body.connectStripe === true) {
+    try {
+      const url = await createStripeOnboardingLink();
+      return NextResponse.json({ url });
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "Ukendt fejl";
+      return NextResponse.json({ error: msg }, { status: 500 });
+    }
+  }
+
   const paymentsEnabled = typeof body.paymentsEnabled === "boolean" ? body.paymentsEnabled : undefined;
   const artistAddress = asTrimmedString(body.artistAddress);
   const artistZip = normalizeDigits(asTrimmedString(body.artistZip));
   const artistCity = asTrimmedString(body.artistCity);
-
-  const wantsBankSetup = regNumber.length > 0 || accountNumber.length > 0;
-  if (wantsBankSetup) {
-    if (regNumber.length !== 4) {
-      return NextResponse.json({ error: "Registreringsnummer skal være præcis 4 cifre." }, { status: 400 });
-    }
-    if (accountNumber.length < 1 || accountNumber.length > 10) {
-      return NextResponse.json({ error: "Kontonummer skal være mellem 1 og 10 cifre." }, { status: 400 });
-    }
-  }
 
   const wantsAddressSetup = artistAddress || artistZip || artistCity;
   if (wantsAddressSetup) {
@@ -133,31 +130,17 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
     if (selectError) throw new Error(selectError.message);
 
-    let stripeAccountId = (existingRow?.stripe_account_id as string | null | undefined) ?? null;
+    const stripeAccountId = (existingRow?.stripe_account_id as string | null | undefined) ?? null;
 
-    if (wantsBankSetup) {
-      stripeAccountId = await getOrCreateStripeAccountId({
-        regNumber,
-        accountNumber,
-        existingStripeAccountId: stripeAccountId,
-      });
+    const payload: Record<string, unknown> = { id: "main" };
+    if (paymentsEnabled !== undefined) payload.payments_enabled = paymentsEnabled;
+    if (wantsAddressSetup) {
+      payload.artist_address = artistAddress;
+      payload.artist_zip = artistZip;
+      payload.artist_city = artistCity;
     }
 
-    const payload = {
-      id: "main",
-      payments_enabled: paymentsEnabled,
-      stripe_account_id: stripeAccountId,
-      bank_reg_number: wantsBankSetup ? regNumber : undefined,
-      bank_account_number: wantsBankSetup ? accountNumber : undefined,
-      onboarding_complete: wantsBankSetup ? true : undefined,
-      artist_address: wantsAddressSetup ? artistAddress : undefined,
-      artist_zip: wantsAddressSetup ? artistZip : undefined,
-      artist_city: wantsAddressSetup ? artistCity : undefined,
-    };
-
-    const { error: upsertError } = await supabase
-      .from("artist_settings")
-      .upsert(payload, { onConflict: "id" });
+    const { error: upsertError } = await supabase.from("artist_settings").upsert(payload, { onConflict: "id" });
     if (upsertError) throw new Error(upsertError.message);
 
     return NextResponse.json({
@@ -198,4 +181,3 @@ export async function GET() {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
-
