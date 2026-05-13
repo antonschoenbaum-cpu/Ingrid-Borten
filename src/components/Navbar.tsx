@@ -3,28 +3,63 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LogIn, Menu, X } from "lucide-react";
+import { LogIn } from "lucide-react";
 
 type NavbarProps = {
   artistName: string;
 };
 
-const NAV_HEIGHT_CLASS = "h-16";
+const NAV_SPACER_CLASS = "h-[64px] md:h-[72px] lg:h-[88px]";
 
-function navLinkClass(active: boolean, transparent: boolean) {
-  const base = "text-[13px] tracking-wide transition";
-  if (transparent) {
-    return [
-      base,
-      "nav-text-shadow",
-      active ? "text-white" : "text-white/85 hover:text-white/70",
-    ].join(" ");
-  }
-  return [
-    base,
-    "text-ink-muted hover:text-ink",
-    active ? "!text-ink" : "",
-  ].join(" ");
+const NAV_ITEMS = [
+  { href: "/", label: "Hjem" },
+  { href: "/om", label: "Om" },
+  { href: "/malerier", label: "Malerier" },
+  { href: "/smykker", label: "Smykker" },
+  { href: "/begivenheder", label: "Begivenheder" },
+  { href: "/kontakt", label: "Kontakt" },
+] as const;
+
+function HamburgerIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <line x1="0" y1="7" x2="24" y2="7" />
+      <line x1="0" y1="13" x2="24" y2="13" />
+      <line x1="0" y1="19" x2="24" y2="19" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      aria-hidden
+    >
+      <line x1="4" y1="4" x2="20" y2="20" />
+      <line x1="20" y1="4" x2="4" y2="20" />
+    </svg>
+  );
+}
+
+function isActiveHref(pathname: string, href: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function Navbar({ artistName }: NavbarProps) {
@@ -53,117 +88,148 @@ export function Navbar({ artistName }: NavbarProps) {
     };
   }, [isHome]);
 
-  const transparent = isHome && !scrolledPastHero && !open;
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const prev = document.body.style.overflow;
+    if (open) document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
 
-  const nav = [
-    { href: "/", label: "Hjem" },
-    { href: "/om", label: "Om" },
-    { href: "/malerier", label: "Malerier" },
-    { href: "/smykker", label: "Smykker" },
-    { href: "/begivenheder", label: "Begivenheder" },
-    { href: "/kontakt", label: "Kontakt" },
-  ];
+  const transparent = isHome && !scrolledPastHero && !open;
 
   const headerClass = [
     "fixed left-0 right-0 top-0 z-50 transition-all duration-300 ease-out",
     transparent
       ? "border-b border-transparent bg-transparent shadow-none"
-      : "border-b border-secondary/40 bg-paper/95 shadow-sm",
+      : "border-b border-gray-200/40 bg-paper shadow-sm",
   ].join(" ");
 
-  const brandClass = [
-    "shrink-0 font-serif text-[1.05rem] tracking-tight md:text-[1.15rem] transition-colors duration-300",
-    transparent ? "text-white nav-text-shadow" : "text-ink",
-  ].join(" ");
+  const linkBase =
+    "inline-block pb-1 text-sm font-light uppercase tracking-[0.18em] transition-opacity duration-200 hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current";
 
-  const loginIconClass = [
-    "flex items-center justify-center rounded p-2 transition",
-    transparent
-      ? "text-white nav-text-shadow hover:text-white/70"
-      : "text-ink-muted hover:bg-linen/60 hover:text-ink",
-  ].join(" ");
-
-  const hamburgerClass = [
-    "rounded p-2 md:hidden transition",
-    transparent ? "text-white nav-text-shadow" : "text-ink",
-  ].join(" ");
+  const colorClass = transparent ? "text-white nav-text-shadow" : "text-ink";
 
   return (
     <>
       <header className={headerClass}>
-        <div className={`relative mx-auto flex ${NAV_HEIGHT_CLASS} max-w-6xl items-center gap-4 px-4 md:px-8`}>
-          <Link href="/" className={brandClass}>
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 md:px-8 md:py-5 lg:px-12 lg:py-6">
+          <Link
+            href="/"
+            aria-label={`${artistName} — Til forsiden`}
+            className={[
+              "shrink-0 font-serif text-xl tracking-wide transition-opacity duration-200 hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current",
+              colorClass,
+            ].join(" ")}
+          >
             {artistName}
           </Link>
 
           <nav
-            className="absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2 items-center gap-8 md:flex"
+            className="hidden items-center md:flex md:gap-7 lg:gap-10"
             aria-label="Hovedmenu"
           >
-            {nav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={navLinkClass(pathname === item.href, transparent)}
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="ml-auto flex items-center gap-1">
-            <Link
-              href="/login"
-              className={loginIconClass}
-              aria-label="Log ind"
-              title="Log ind"
-            >
-              <LogIn className="size-[1.15rem]" strokeWidth={1.5} />
-            </Link>
-            <button
-              type="button"
-              className={hamburgerClass}
-              aria-expanded={open}
-              aria-controls="mobile-nav"
-              onClick={() => setOpen((v) => !v)}
-            >
-              {open ? <X size={22} /> : <Menu size={22} />}
-            </button>
-          </div>
-        </div>
-
-        {open ? (
-          <div
-            id="mobile-nav"
-            className="border-t border-secondary/40 bg-paper px-4 py-4 shadow-sm md:hidden"
-          >
-            <nav className="flex flex-col gap-3" aria-label="Mobilmenu">
-              {nav.map((item) => (
+            {NAV_ITEMS.map((item) => {
+              const active = isActiveHref(pathname, item.href);
+              return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  aria-current={active ? "page" : undefined}
                   className={[
-                    "text-[13px] tracking-wide transition",
-                    pathname === item.href ? "text-ink" : "text-ink-muted hover:text-ink",
+                    linkBase,
+                    colorClass,
+                    active ? "border-b border-current" : "border-b border-transparent",
                   ].join(" ")}
-                  onClick={() => setOpen(false)}
                 >
                   {item.label}
                 </Link>
-              ))}
-              <Link
-                href="/login"
-                className="text-[13px] text-ink-muted"
-                onClick={() => setOpen(false)}
-              >
-                Log ind
-              </Link>
-            </nav>
-          </div>
-        ) : null}
+              );
+            })}
+            <Link
+              href="/login"
+              aria-label="Log ind"
+              title="Log ind"
+              className={[
+                "ml-2 inline-flex items-center justify-center transition-opacity duration-200 hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current lg:ml-6",
+                colorClass,
+              ].join(" ")}
+            >
+              <LogIn className="size-[1.15rem]" strokeWidth={1.5} />
+            </Link>
+          </nav>
+
+          <button
+            type="button"
+            className={[
+              "inline-flex items-center justify-center p-2 transition-opacity duration-200 hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current md:hidden",
+              colorClass,
+            ].join(" ")}
+            aria-expanded={open}
+            aria-controls="mobile-nav-overlay"
+            aria-label={open ? "Luk menu" : "Åbn menu"}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <HamburgerIcon />
+          </button>
+        </div>
       </header>
 
-      {transparent ? null : <div aria-hidden className={NAV_HEIGHT_CLASS} />}
+      <div
+        id="mobile-nav-overlay"
+        data-open={open ? "true" : "false"}
+        aria-hidden={!open}
+        className="fixed inset-0 z-[60] flex flex-col bg-white opacity-0 transition-opacity duration-300 ease-out data-[open=true]:pointer-events-auto data-[open=true]:opacity-100 data-[open=false]:pointer-events-none md:hidden"
+      >
+        <div className="flex items-center justify-between px-6 py-4">
+          <span className="font-serif text-xl tracking-wide text-ink">{artistName}</span>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="Luk menu"
+            className="inline-flex items-center justify-center p-2 text-ink transition-opacity duration-200 hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
+          >
+            <CloseIcon />
+          </button>
+        </div>
+
+        <nav
+          className="flex flex-1 flex-col items-center justify-center gap-6 px-6 pb-16"
+          aria-label="Mobilmenu"
+        >
+          {NAV_ITEMS.map((item, index) => {
+            const active = isActiveHref(pathname, item.href);
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                onClick={() => setOpen(false)}
+                style={{ transitionDelay: open ? `${index * 40}ms` : "0ms" }}
+                className={[
+                  "nav-overlay-item font-serif text-4xl text-ink transition-all duration-300 ease-out hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current",
+                  active ? "border-b border-current pb-1" : "",
+                ].join(" ")}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
+
+          <Link
+            href="/login"
+            onClick={() => setOpen(false)}
+            style={{ transitionDelay: open ? `${NAV_ITEMS.length * 40}ms` : "0ms" }}
+            className="nav-overlay-item mt-6 inline-flex items-center gap-2 text-sm uppercase tracking-[0.18em] text-ink-muted transition-all duration-300 ease-out hover:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
+          >
+            <LogIn className="size-4" strokeWidth={1.5} />
+            Log ind
+          </Link>
+        </nav>
+      </div>
+
+      {transparent ? null : <div aria-hidden className={NAV_SPACER_CLASS} />}
     </>
   );
 }
