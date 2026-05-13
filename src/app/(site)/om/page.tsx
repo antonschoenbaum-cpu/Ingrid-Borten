@@ -81,9 +81,16 @@ export default async function OmPage() {
         <div className="grid gap-12 lg:grid-cols-[1fr_300px] lg:items-start lg:gap-16">
           <section id="biografi" className="scroll-mt-32 lg:col-start-1 lg:row-start-1">
             <h2 className="font-serif text-2xl text-ink">Biografi</h2>
-            <p className="section-rule mt-6 whitespace-pre-wrap text-lg leading-relaxed text-ink-muted">
-              {about.biography}
-            </p>
+            <div className="section-rule mt-6 space-y-6">
+              {about.heroDescription?.trim() ? (
+                <p className="whitespace-pre-wrap text-lg leading-relaxed text-ink-muted">
+                  {about.heroDescription}
+                </p>
+              ) : null}
+              <p className="whitespace-pre-wrap text-lg leading-relaxed text-ink-muted">
+                {about.biography}
+              </p>
+            </div>
           </section>
 
           <aside

@@ -51,3 +51,18 @@ body {
 .section-rule {
   @apply border-t border-secondary/50;
 }
+
+@keyframes hero-scroll-pulse {
+  0%, 100% { transform: translateY(0); opacity: 0.7; }
+  50% { transform: translateY(6px); opacity: 0.3; }
+}
+
+.hero-scroll-dot {
+  animation: hero-scroll-pulse 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-scroll-dot {
+    animation: none;
+  }
+}

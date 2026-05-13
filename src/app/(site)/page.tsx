@@ -45,33 +45,38 @@ export default async function HomePage() {
   const heroSubtitle =
     about.heroSubtitle?.trim() ||
     "Velkommen til et rum for maleri og smykker — håndværk med ro, varme og nordisk landskab i mindet.";
-  const heroDescription =
-    about.heroDescription?.trim() ||
-    "Ingrid Simmenæs Borten arbejder på grænsen mellem maleri og skulptur — fra olie på lærred til øreringe formet som små arkitektoniske former. Her møder du udvalgte værker og begivenheder.";
 
   return (
     <div>
-      <section className="relative min-h-[72vh] w-full overflow-hidden bg-paper-warm">
+      <section className="relative min-h-[85vh] w-full overflow-hidden bg-paper-warm md:min-h-screen">
         {heroImages.length > 0 ? <HeroBackground images={heroImages} /> : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-paper via-paper/60 to-transparent" />
-        <div className="relative mx-auto flex min-h-[72vh] max-w-6xl flex-col justify-end px-5 pb-16 pt-32 md:px-8 md:pb-24">
-          <p className="max-w-xl font-serif text-3xl leading-tight text-ink md:text-4xl lg:text-[2.75rem]">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 left-0 right-0 h-[60%]"
+          style={{
+            background:
+              "linear-gradient(to top, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.45) 30%, rgba(0,0,0,0.15) 60%, rgba(0,0,0,0) 100%)",
+          }}
+        />
+        <div className="relative mx-auto flex min-h-[85vh] max-w-7xl flex-col justify-end px-6 pb-16 pt-12 md:min-h-screen md:px-12 md:pb-24 md:pt-32">
+          <h1 className="max-w-[20ch] font-serif text-4xl font-normal leading-[1.1] text-white md:text-5xl lg:text-6xl">
             {heroTitle}
-          </p>
-          <p className="mt-6 max-w-lg text-lg text-ink-muted">
+          </h1>
+          <p className="mt-6 max-w-[55ch] text-base leading-relaxed text-white/85 md:text-lg">
             {heroSubtitle}
           </p>
         </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-24">
-        <p className="mx-auto max-w-3xl text-center text-lg leading-relaxed text-ink-muted">
-          {heroDescription}
-        </p>
+        <div
+          aria-hidden
+          className="pointer-events-none absolute bottom-8 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 text-white/60"
+        >
+          <span className="text-[0.65rem] uppercase tracking-[0.3em]">Scroll</span>
+          <span className="hero-scroll-dot block size-1.5 rounded-full bg-white/70" />
+        </div>
       </section>
 
       <section className="border-y border-secondary/50 bg-paper-warm/80">
-        <div className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-20">
+        <div className="mx-auto max-w-6xl px-5 pb-16 pt-24 md:px-8 md:pb-20 md:pt-32">
           <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <h2 className="font-serif text-3xl text-ink">Seneste malerier</h2>
             <Link
