@@ -62,7 +62,7 @@ export default async function OmPage() {
 
       <nav
         aria-label="På denne side"
-        className="sticky top-14 z-30 border-b border-secondary/40 bg-paper/95 py-3 backdrop-blur-sm"
+        className="sticky top-16 z-30 border-b border-secondary/40 bg-paper/95 py-3 backdrop-blur-sm"
       >
         <div className="mx-auto flex max-w-6xl flex-wrap gap-2 px-5 md:gap-3 md:px-8">
           {quickNav.map((item) => (
