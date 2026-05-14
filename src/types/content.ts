@@ -62,8 +62,6 @@ export type AboutData = {
   galleryPaintingsDescription?: string;
   /** Intro på /smykker (CMS). */
   galleryJewelryDescription?: string;
-  /** Op til 3 maleri-id'er (rækkefølge) vist som udvalgte værker under hero på forsiden. */
-  featuredPaintingIds?: string[];
 };
 
 export type ContactLinks = {

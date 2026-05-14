@@ -1,10 +1,9 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { AboutData, CvEntry } from "@/types/content";
-import { normalizeFeaturedPaintingIds } from "@/lib/featured-paintings";
 
 /*
  * SQL: sql/supabase-about-setup.sql, supabase-forside-setup.sql,
- * supabase-gallery-descriptions-setup.sql, supabase-featured-paintings-setup.sql
+ * supabase-gallery-descriptions-setup.sql
  */
 
 type AboutRow = {
@@ -22,7 +21,6 @@ type AboutRow = {
   hero_image_5: string | null;
   gallery_paintings_description: string | null;
   gallery_jewelry_description: string | null;
-  featured_painting_ids: unknown;
 };
 
 function supabaseUrl(): string {
@@ -99,7 +97,6 @@ function mapRowToAbout(r: AboutRow): AboutData {
     heroImage5: r.hero_image_5 ?? "",
     galleryPaintingsDescription: r.gallery_paintings_description ?? "",
     galleryJewelryDescription: r.gallery_jewelry_description ?? "",
-    featuredPaintingIds: normalizeFeaturedPaintingIds(r.featured_painting_ids),
   };
 }
 
@@ -109,7 +106,7 @@ export async function readAboutFromSupabase(): Promise<AboutData | null> {
   const { data, error } = await supabase
     .from("about_content")
     .select(
-      "id,biography,artist_photo,cv_entries,hero_title,hero_subtitle,hero_description,hero_image_1,hero_image_2,hero_image_3,hero_image_4,hero_image_5,gallery_paintings_description,gallery_jewelry_description,featured_painting_ids",
+      "id,biography,artist_photo,cv_entries,hero_title,hero_subtitle,hero_description,hero_image_1,hero_image_2,hero_image_3,hero_image_4,hero_image_5,gallery_paintings_description,gallery_jewelry_description",
     )
     .eq("id", "main")
     .maybeSingle();
@@ -135,13 +132,12 @@ export async function upsertAboutInSupabase(data: AboutData): Promise<AboutData>
     hero_image_5: data.heroImage5 ?? "",
     gallery_paintings_description: data.galleryPaintingsDescription ?? "",
     gallery_jewelry_description: data.galleryJewelryDescription ?? "",
-    featured_painting_ids: normalizeFeaturedPaintingIds(data.featuredPaintingIds),
   };
   const { data: row, error } = await supabase
     .from("about_content")
     .upsert(payload, { onConflict: "id" })
     .select(
-      "id,biography,artist_photo,cv_entries,hero_title,hero_subtitle,hero_description,hero_image_1,hero_image_2,hero_image_3,hero_image_4,hero_image_5,gallery_paintings_description,gallery_jewelry_description,featured_painting_ids",
+      "id,biography,artist_photo,cv_entries,hero_title,hero_subtitle,hero_description,hero_image_1,hero_image_2,hero_image_3,hero_image_4,hero_image_5,gallery_paintings_description,gallery_jewelry_description",
     )
     .single();
   if (error) throw new Error(error.message);

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FadeInSection } from "@/components/fade-in-section";
-import { FeaturedWorks } from "@/components/featured-works";
+import { FeaturedWork } from "@/components/featured-work";
 import { GalleryGrid } from "@/components/GalleryGrid";
 import { HeroBackground } from "@/components/HeroBackground";
 import {
@@ -9,7 +9,6 @@ import {
   isEventPastByEndDate,
 } from "@/lib/format";
 import { getAbout, getEvents, getJewelry, getPaintings } from "@/lib/data";
-import { resolveFeaturedPaintings } from "@/lib/featured-paintings";
 
 export default async function HomePage() {
   const [paintings, jewelry, events, about] = await Promise.all([
@@ -26,7 +25,8 @@ export default async function HomePage() {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 3);
 
-  const featuredPaintings = resolveFeaturedPaintings(about.featuredPaintingIds, paintings);
+  const featuredPainting =
+    [...paintings].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
 
   const upcoming = events
     .filter((e) => !isEventPastByEndDate(e.end_date))
@@ -80,7 +80,7 @@ export default async function HomePage() {
       </section>
 
       <FadeInSection>
-        <FeaturedWorks paintings={featuredPaintings} />
+        <FeaturedWork painting={featuredPainting} />
       </FadeInSection>
 
       <section className="border-y border-gray-200/50 bg-paper-warm/80 py-24 md:py-32">
@@ -138,7 +138,7 @@ export default async function HomePage() {
           <div className="mx-auto max-w-7xl px-6 md:px-12">
             <FadeInSection delay={0.08}>
               <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-                <h2 className="font-heading text-3xl leading-tight text-gray-900 md:text-5xl">
+                <h2 className="font-heading text-4xl leading-tight text-gray-900 md:text-5xl">
                   Kommende begivenheder
                 </h2>
                 <Link
