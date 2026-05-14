@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { FadeInSection } from "@/components/fade-in-section";
+import { SitePageHeader } from "@/components/site-page-header";
 import { ContactSection } from "./contact-section";
 import { canUseSupabaseContactRead, readContactFromSupabase } from "@/lib/supabase-contact";
 
@@ -48,22 +50,24 @@ export default async function ContactPage({
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-16 md:px-8 md:py-24">
-      <header className="mb-12 text-center">
-        <h1 className="font-serif text-4xl text-ink md:text-5xl">Kontakt</h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-ink-muted">
-          {`Tag kontakt til ${artistName}`}
-        </p>
-      </header>
-
-      <ContactSection
-        key={vare ?? "kontakt"}
-        email={email}
-        facebookUrl={facebookUrl}
-        instagramUrl={instagramUrl}
-        initialMessage={initialMessage}
-        artistName={artistName}
-      />
+    <div>
+      <FadeInSection>
+        <SitePageHeader
+          eyebrow="Atelier"
+          title="Kontakt"
+          subtitle={`Tag kontakt til ${artistName} — bestillinger, udstillinger eller et uforpligtende spørgsmål om et værk.`}
+        />
+      </FadeInSection>
+      <div className="mx-auto max-w-3xl px-6 pb-24 md:px-12 md:pb-32">
+        <ContactSection
+          key={vare ?? "kontakt"}
+          email={email}
+          facebookUrl={facebookUrl}
+          instagramUrl={instagramUrl}
+          initialMessage={initialMessage}
+          artistName={artistName}
+        />
+      </div>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArtworkImage } from "@/components/artwork-image";
-import { SoldPrice } from "@/components/SoldPrice";
+import { SoldStamp } from "@/components/sold-stamp";
+import { formatPriceDKK } from "@/lib/format";
 
 type Item = {
   id: string;
@@ -16,22 +17,29 @@ type Props = {
 };
 
 export function ProductCard({ item, href }: Props) {
+  const sold = item.sold === true;
   return (
-    <Link href={href} className="group block break-inside-avoid">
-      <article className="overflow-hidden border border-secondary/50 bg-paper transition duration-300 hover:border-accent/40 hover:shadow-md">
-        <div className="overflow-hidden">
+    <Link href={href} className="group block cursor-pointer">
+      <article className="overflow-hidden">
+        <div className="relative overflow-hidden">
           <ArtworkImage
             src={item.image}
             alt={item.title}
-            className="w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
+            className="h-auto w-full transition-transform duration-700 ease-out group-hover:scale-[1.03]"
           />
+          {sold ? <SoldStamp /> : null}
         </div>
-        <div className="section-rule px-4 py-4">
-          <h2 className="font-serif text-lg text-ink">{item.title}</h2>
-          <p className="mt-2">
-            <SoldPrice price={item.price} sold={item.sold} size="card" />
-          </p>
-        </div>
+        <h2 className="mt-4 font-heading text-lg text-gray-900">{item.title}</h2>
+        <p className="mt-1 text-sm text-gray-600">
+          {sold ? (
+            <>
+              <span className="line-through">{formatPriceDKK(item.price)}</span>
+              <span className="ml-2 text-xs uppercase tracking-wider text-gray-500">(SOLGT)</span>
+            </>
+          ) : (
+            formatPriceDKK(item.price)
+          )}
+        </p>
       </article>
     </Link>
   );

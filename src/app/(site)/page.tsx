@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArtworkImage } from "@/components/artwork-image";
+import { FadeInSection } from "@/components/fade-in-section";
+import { FeaturedWork } from "@/components/featured-work";
+import { GalleryGrid } from "@/components/GalleryGrid";
 import { HeroBackground } from "@/components/HeroBackground";
-import { SoldPrice } from "@/components/SoldPrice";
 import {
   formatEventOpensDanish,
   formatEventUntilDanish,
@@ -23,6 +24,9 @@ export default async function HomePage() {
   const recentJewelry = [...jewelry]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 3);
+
+  const featuredPainting =
+    [...paintings].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
 
   const upcoming = events
     .filter((e) => !isEventPastByEndDate(e.end_date))
@@ -75,113 +79,101 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-secondary/50 bg-paper-warm/80">
-        <div className="mx-auto max-w-6xl px-5 pb-16 pt-24 md:px-8 md:pb-20 md:pt-32">
-          <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <h2 className="font-serif text-3xl text-ink">Seneste malerier</h2>
-            <Link
-              href="/malerier"
-              className="text-sm uppercase tracking-widest text-ink-muted underline-offset-4 transition hover:text-accent hover:underline"
-            >
-              Se alle malerier
-            </Link>
-          </div>
-          {recentPaintings.length === 0 ? (
-            <p className="text-ink-muted">Malerier tilføjes snart.</p>
-          ) : (
-            <div className="grid gap-8 sm:grid-cols-3">
-              {recentPaintings.map((p) => (
-                <Link key={p.id} href={`/malerier/${p.id}`} className="group block">
-                  <div className="overflow-hidden border border-secondary/50 bg-paper transition duration-300 group-hover:border-accent/35 group-hover:shadow-md">
-                    <ArtworkImage
-                      src={p.image}
-                      alt={p.title}
-                      className="aspect-[4/5] w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
-                    />
-                    <div className="border-t border-secondary/40 px-4 py-4">
-                      <h3 className="font-serif text-lg">{p.title}</h3>
-                      <p className="mt-1">
-                        <SoldPrice price={p.price} sold={p.sold} size="card" />
-                      </p>
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
+      <FadeInSection>
+        <FeaturedWork painting={featuredPainting} />
+      </FadeInSection>
 
-      <section className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-20">
-        <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-          <h2 className="font-serif text-3xl text-ink">Seneste smykker</h2>
-          <Link
-            href="/smykker"
-            className="text-sm uppercase tracking-widest text-ink-muted underline-offset-4 transition hover:text-accent hover:underline"
-          >
-            Se alle smykker
-          </Link>
-        </div>
-        {recentJewelry.length === 0 ? (
-          <p className="text-ink-muted">Smykker tilføjes snart.</p>
-        ) : (
-          <div className="grid gap-8 sm:grid-cols-3">
-            {recentJewelry.map((j) => (
-              <Link key={j.id} href={`/smykker/${j.id}`} className="group block">
-                <div className="overflow-hidden border border-secondary/50 bg-paper transition duration-300 group-hover:border-accent/35 group-hover:shadow-md">
-                  <ArtworkImage
-                    src={j.image}
-                    alt={j.title}
-                    className="aspect-square w-full object-cover transition duration-500 ease-out group-hover:scale-[1.03]"
-                  />
-                  <div className="border-t border-secondary/40 px-4 py-4">
-                    <h3 className="font-serif text-lg">{j.title}</h3>
-                    <p className="mt-1">
-                      <SoldPrice price={j.price} sold={j.sold} size="card" />
-                    </p>
-                  </div>
-                </div>
+      <section className="border-y border-gray-200/50 bg-paper-warm/80 py-24 md:py-32">
+        <div className="mx-auto max-w-7xl px-6 md:px-12">
+          <FadeInSection delay={0.04}>
+            <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+              <h2 className="font-heading text-3xl leading-tight text-gray-900 md:text-5xl">
+                Seneste malerier
+              </h2>
+              <Link
+                href="/malerier"
+                className="text-sm uppercase tracking-[0.18em] text-gray-600 underline-offset-4 transition hover:text-gray-900 hover:underline"
+              >
+                Se alle malerier
               </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <section className="bg-linen/50">
-        <div className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-20">
-          <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <h2 className="font-serif text-3xl text-ink">Kommende begivenheder</h2>
-            <Link
-              href="/begivenheder"
-              className="text-sm uppercase tracking-widest text-ink-muted underline-offset-4 hover:text-ink hover:underline"
-            >
-              Alle begivenheder
-            </Link>
-          </div>
-          {upcoming.length === 0 ? (
-            <p className="text-ink-muted">Der er ingen kommende begivenheder lige nu.</p>
-          ) : (
-            <ul className="space-y-6">
-              {upcoming.map((e) => (
-                <li
-                  key={e.id}
-                  className="flex flex-col gap-2 border-b border-secondary/40 pb-6 last:border-0 md:flex-row md:items-start md:justify-between md:gap-10"
-                >
-                  <div className="min-w-0 shrink-0 md:max-w-md">
-                    <h3 className="font-serif text-xl text-ink">{e.title}</h3>
-                    <p className="mt-2 text-sm text-ink">{formatEventOpensDanish(e.start_date)}</p>
-                    <p className="mt-0.5 text-sm text-ink-muted">{formatEventUntilDanish(e.end_date)}</p>
-                    <p className="mt-2 text-sm text-ink-muted">{e.location}</p>
-                  </div>
-                  <p className="min-w-0 flex-1 text-sm leading-relaxed text-ink-muted">
-                    {e.description}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          )}
+            </div>
+            {recentPaintings.length === 0 ? (
+              <p className="py-24 text-center text-base italic text-gray-500">
+                Værker tilføjes løbende. Vend tilbage snart.
+              </p>
+            ) : (
+              <GalleryGrid items={recentPaintings} basePath="/malerier" />
+            )}
+          </FadeInSection>
         </div>
       </section>
+
+      <section className="py-24 md:py-32">
+        <div className="mx-auto max-w-7xl px-6 md:px-12">
+          <FadeInSection delay={0.06}>
+            <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+              <h2 className="font-heading text-3xl leading-tight text-gray-900 md:text-5xl">
+                Seneste smykker
+              </h2>
+              <Link
+                href="/smykker"
+                className="text-sm uppercase tracking-[0.18em] text-gray-600 underline-offset-4 transition hover:text-gray-900 hover:underline"
+              >
+                Se alle smykker
+              </Link>
+            </div>
+            {recentJewelry.length === 0 ? (
+              <p className="py-24 text-center text-base italic text-gray-500">
+                Værker tilføjes løbende. Vend tilbage snart.
+              </p>
+            ) : (
+              <GalleryGrid items={recentJewelry} basePath="/smykker" />
+            )}
+          </FadeInSection>
+        </div>
+      </section>
+
+      {upcoming.length > 0 ? (
+        <section className="border-t border-gray-200/50 bg-linen/50 py-24 md:py-32">
+          <div className="mx-auto max-w-7xl px-6 md:px-12">
+            <FadeInSection delay={0.08}>
+              <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+                <h2 className="font-heading text-3xl leading-tight text-gray-900 md:text-5xl">
+                  Kommende begivenheder
+                </h2>
+                <Link
+                  href="/begivenheder"
+                  className="text-sm uppercase tracking-[0.18em] text-gray-600 underline-offset-4 transition hover:text-gray-900 hover:underline"
+                >
+                  Alle begivenheder
+                </Link>
+              </div>
+              <ul className="space-y-6">
+                {upcoming.map((e) => (
+                  <li
+                    key={e.id}
+                    className="flex flex-col gap-2 border-b border-gray-200/50 pb-6 last:border-0 md:flex-row md:items-start md:justify-between md:gap-10"
+                  >
+                    <div className="min-w-0 shrink-0 md:max-w-md">
+                      <h3 className="font-heading text-xl text-gray-900">{e.title}</h3>
+                      <p className="mt-2 text-sm text-gray-900">
+                        {formatEventOpensDanish(e.start_date)}
+                      </p>
+                      <p className="mt-0.5 text-sm text-gray-600">
+                        {formatEventUntilDanish(e.end_date)}
+                      </p>
+                      <p className="mt-2 text-sm text-gray-600">{e.location}</p>
+                    </div>
+                    <p className="min-w-0 flex-1 text-sm leading-relaxed text-gray-600">
+                      {e.description}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </FadeInSection>
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

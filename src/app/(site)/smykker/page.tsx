@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
+import { FadeInSection } from "@/components/fade-in-section";
 import { GalleryGrid } from "@/components/GalleryGrid";
+import { SitePageHeader } from "@/components/site-page-header";
 import { getAbout, getJewelry } from "@/lib/data";
+
 const artistName = (process.env.ARTIST_NAME ?? "Kunstnernavn").trim() || "Kunstnernavn";
 
 export const metadata: Metadata = {
@@ -12,15 +15,23 @@ export default async function JewelryPage() {
   const [items, about] = await Promise.all([getJewelry(), getAbout()]);
   const sorted = [...items].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const intro =
-    about.galleryJewelryDescription?.trim() || "Se udvalget af originale værker";
+    about.galleryJewelryDescription?.trim() ||
+    "Håndlavede smykker med ro og varme — metal og form i samspil med naturen.";
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-16 md:px-8 md:py-20">
-      <header className="section-rule mb-12 max-w-2xl pb-12">
-        <h1 className="font-serif text-4xl text-ink md:text-5xl">Smykker</h1>
-        <p className="mt-4 text-lg leading-relaxed text-ink-muted">{intro}</p>
-      </header>
-      <GalleryGrid items={sorted} basePath="/smykker" />
+    <div>
+      <FadeInSection>
+        <SitePageHeader eyebrow="Smykker" title="Smykker" subtitle={intro} />
+      </FadeInSection>
+      <div className="mx-auto max-w-7xl px-6 pb-24 md:px-12 md:pb-32">
+        {sorted.length === 0 ? (
+          <p className="py-24 text-center text-base italic text-gray-500">
+            Værker tilføjes løbende. Vend tilbage snart.
+          </p>
+        ) : (
+          <GalleryGrid items={sorted} basePath="/smykker" />
+        )}
+      </div>
     </div>
   );
 }

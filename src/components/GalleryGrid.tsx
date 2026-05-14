@@ -15,9 +15,9 @@ type Props = {
 
 export function GalleryGrid({ items, basePath }: Props) {
   return (
-    <div className="columns-1 gap-6 sm:columns-2 lg:columns-3">
+    <div className="columns-1 gap-6 md:columns-2 md:gap-8 lg:columns-3">
       {items.map((item) => (
-        <div key={item.id} className="mb-6">
+        <div key={item.id} className="mb-6 inline-block w-full break-inside-avoid md:mb-8">
           <ProductCard item={item} href={`${basePath}/${item.id}`} />
         </div>
       ))}

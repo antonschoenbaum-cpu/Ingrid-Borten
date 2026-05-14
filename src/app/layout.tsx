@@ -51,7 +51,7 @@ export default async function RootLayout({
       className={`${playfair.variable} ${inter.variable} h-full scroll-smooth`}
     >
       <body
-        className={`min-h-full antialiased ${inter.className}`}
+        className={`min-h-full antialiased font-body text-base leading-relaxed text-gray-800 ${inter.className}`}
         style={{ "--bg-color": bgColor } as CSSProperties}
       >
         <Providers>{children}</Providers>
