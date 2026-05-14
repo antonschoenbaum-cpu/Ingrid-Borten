@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { revalidatePath } from "next/cache";
 import type { AboutData, EventItem, Jewelry, Painting } from "@/types/content";
+import { normalizeFeaturedPaintingIds } from "@/lib/featured-paintings";
 
 const root = process.cwd();
 const dataDir = path.join(root, "data");
@@ -97,6 +98,7 @@ export async function readAbout(): Promise<AboutData> {
     heroImage5: data.heroImage5 ?? "",
     galleryPaintingsDescription: data.galleryPaintingsDescription ?? "",
     galleryJewelryDescription: data.galleryJewelryDescription ?? "",
+    featuredPaintingIds: normalizeFeaturedPaintingIds(data.featuredPaintingIds),
   };
 }
 

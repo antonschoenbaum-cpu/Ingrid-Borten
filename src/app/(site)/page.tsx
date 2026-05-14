@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { FadeInSection } from "@/components/fade-in-section";
-import { FeaturedWork } from "@/components/featured-work";
+import { FeaturedWorks } from "@/components/featured-works";
 import { GalleryGrid } from "@/components/GalleryGrid";
 import { HeroBackground } from "@/components/HeroBackground";
 import {
@@ -9,6 +9,7 @@ import {
   isEventPastByEndDate,
 } from "@/lib/format";
 import { getAbout, getEvents, getJewelry, getPaintings } from "@/lib/data";
+import { resolveFeaturedPaintings } from "@/lib/featured-paintings";
 
 export default async function HomePage() {
   const [paintings, jewelry, events, about] = await Promise.all([
@@ -25,8 +26,7 @@ export default async function HomePage() {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 3);
 
-  const featuredPainting =
-    [...paintings].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] ?? null;
+  const featuredPaintings = resolveFeaturedPaintings(about.featuredPaintingIds, paintings);
 
   const upcoming = events
     .filter((e) => !isEventPastByEndDate(e.end_date))
@@ -80,7 +80,7 @@ export default async function HomePage() {
       </section>
 
       <FadeInSection>
-        <FeaturedWork painting={featuredPainting} />
+        <FeaturedWorks paintings={featuredPaintings} />
       </FadeInSection>
 
       <section className="border-y border-gray-200/50 bg-paper-warm/80 py-24 md:py-32">

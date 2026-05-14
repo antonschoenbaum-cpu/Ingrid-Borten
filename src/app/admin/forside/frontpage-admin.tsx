@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { UploadForm } from "@/components/UploadForm";
 import { ArtworkImage } from "@/components/artwork-image";
-import type { AboutData } from "@/types/content";
+import { normalizeFeaturedPaintingIds } from "@/lib/featured-paintings";
+import type { AboutData, Painting } from "@/types/content";
 
-type Props = { initial: AboutData };
+type Props = { initial: AboutData; paintings: Painting[] };
 
 type AboutResponse = AboutData & { error?: string };
 
@@ -37,6 +38,11 @@ function minVisibleRows(slots: string[]): number {
   return Math.min(MAX_HERO_IMAGES, lastFilled + 2);
 }
 
+function threeFeaturedSlots(ids?: string[]): string[] {
+  const n = normalizeFeaturedPaintingIds(ids);
+  return [n[0] ?? "", n[1] ?? "", n[2] ?? ""];
+}
+
 function slotsToPayload(slots: string[]) {
   const p = packSlots(slots);
   return {
@@ -48,7 +54,7 @@ function slotsToPayload(slots: string[]) {
   };
 }
 
-export function FrontpageAdmin({ initial }: Props) {
+export function FrontpageAdmin({ initial, paintings }: Props) {
   const [heroTitle, setHeroTitle] = useState(initial.heroTitle ?? "");
   const [heroSubtitle, setHeroSubtitle] = useState(initial.heroSubtitle ?? "");
   const [heroDescription, setHeroDescription] = useState(initial.heroDescription ?? "");
@@ -60,13 +66,17 @@ export function FrontpageAdmin({ initial }: Props) {
   );
   const [slots, setSlots] = useState<string[]>(() => packSlots(slotsFromAbout(initial)));
   const [visibleRows, setVisibleRows] = useState(() => minVisibleRows(packSlots(slotsFromAbout(initial))));
+  const [featuredSlots, setFeaturedSlots] = useState<string[]>(() => threeFeaturedSlots(initial.featuredPaintingIds));
 
   const [pendingText, setPendingText] = useState(false);
   const [pendingImages, setPendingImages] = useState(false);
+  const [pendingFeatured, setPendingFeatured] = useState(false);
   const [textMsg, setTextMsg] = useState<string | null>(null);
   const [textErr, setTextErr] = useState<string | null>(null);
   const [imgMsg, setImgMsg] = useState<string | null>(null);
   const [imgErr, setImgErr] = useState<string | null>(null);
+  const [featuredMsg, setFeaturedMsg] = useState<string | null>(null);
+  const [featuredErr, setFeaturedErr] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
@@ -81,6 +91,7 @@ export function FrontpageAdmin({ initial }: Props) {
       const next = packSlots(slotsFromAbout(data));
       setSlots(next);
       setVisibleRows(minVisibleRows(next));
+      setFeaturedSlots(threeFeaturedSlots(data.featuredPaintingIds));
     }
     void load();
   }, []);
@@ -128,6 +139,28 @@ export function FrontpageAdmin({ initial }: Props) {
     setSlots(packed);
     setVisibleRows(minVisibleRows(packed));
     setImgMsg("Baggrundsbilleder er gemt.");
+  }
+
+  async function saveFeatured() {
+    setFeaturedErr(null);
+    setFeaturedMsg(null);
+    setPendingFeatured(true);
+    const res = await fetch("/api/about", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        featuredPaintingIds: normalizeFeaturedPaintingIds(featuredSlots),
+      }),
+    });
+    setPendingFeatured(false);
+    if (!res.ok) {
+      const j = (await res.json().catch(() => ({}))) as { error?: string };
+      setFeaturedErr(j.error ?? "Kunne ikke gemme udvalgte værker.");
+      return;
+    }
+    const data = (await res.json()) as AboutData;
+    setFeaturedSlots(threeFeaturedSlots(data.featuredPaintingIds));
+    setFeaturedMsg("Udvalgte værker er gemt.");
   }
 
   function setSlotAt(index: number, url: string) {
@@ -231,6 +264,60 @@ export function FrontpageAdmin({ initial }: Props) {
         </button>
         {textMsg ? <p className="mt-3 text-sm text-accent">{textMsg}</p> : null}
         {textErr ? <p className="mt-3 text-sm text-rose-dust">{textErr}</p> : null}
+      </section>
+
+      <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">
+        <h2 className="font-serif text-2xl text-ink">Udvalgte værker på forsiden</h2>
+        <p className="mt-2 text-sm text-ink-muted">
+          Vælg op til tre malerier der vises under hero-sektionen på forsiden (i den rækkefølge du vælger).
+          Lad en plads stå tom, hvis du vil vise færre. Der vises intet, hvis ingen er valgt.
+        </p>
+        {paintings.length === 0 ? (
+          <p className="mt-4 text-sm text-ink-muted">Tilføj malerier under Admin → Malerier først.</p>
+        ) : (
+          <div className="mt-6 space-y-5">
+            {[0, 1, 2].map((i) => (
+              <label key={i} className="block text-sm text-ink-muted">
+                Maleri {i + 1}
+                <select
+                  value={featuredSlots[i] ?? ""}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setFeaturedSlots((prev) => {
+                      const next = [...prev];
+                      next[i] = v;
+                      return next;
+                    });
+                  }}
+                  className="mt-1 w-full max-w-xl border border-secondary/60 bg-paper px-3 py-2 text-sm text-ink"
+                >
+                  <option value="">— Ingen —</option>
+                  {paintings.map((p) => {
+                    const takenElsewhere = featuredSlots.some(
+                      (sid, j) => j !== i && sid === p.id && sid !== "",
+                    );
+                    return (
+                      <option key={p.id} value={p.id} disabled={takenElsewhere}>
+                        {p.title}
+                        {p.sold ? " (solgt)" : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+              </label>
+            ))}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => void saveFeatured()}
+          disabled={pendingFeatured || paintings.length === 0}
+          className="btn-outline mt-6"
+        >
+          {pendingFeatured ? "Gemmer..." : "Gem udvalgte værker"}
+        </button>
+        {featuredMsg ? <p className="mt-3 text-sm text-accent">{featuredMsg}</p> : null}
+        {featuredErr ? <p className="mt-3 text-sm text-rose-dust">{featuredErr}</p> : null}
       </section>
 
       <section className="rounded border border-secondary/50 bg-paper-warm/40 p-6">

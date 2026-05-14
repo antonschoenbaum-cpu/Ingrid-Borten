@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { generateAndStoreBackgroundColorFromAboutAndPaintings } from "@/lib/colors";
 import { requireAdmin } from "@/lib/require-admin";
 import { readAbout, revalidateAboutPaths, writeAbout } from "@/lib/store";
+import { normalizeFeaturedPaintingIds } from "@/lib/featured-paintings";
 import {
   canUseSupabaseAboutRead,
   canUseSupabaseAboutWrite,
@@ -97,6 +98,9 @@ export async function PUT(req: NextRequest) {
     typeof body.galleryJewelryDescription === "string"
       ? body.galleryJewelryDescription.trim().slice(0, 600)
       : (prev.galleryJewelryDescription ?? "");
+  const featuredPaintingIds = Array.isArray(body.featuredPaintingIds)
+    ? normalizeFeaturedPaintingIds(body.featuredPaintingIds)
+    : normalizeFeaturedPaintingIds(prev.featuredPaintingIds);
   const heroImagesChanged =
     heroImage1 !== (prev.heroImage1 ?? "") ||
     heroImage2 !== (prev.heroImage2 ?? "") ||
@@ -131,6 +135,7 @@ export async function PUT(req: NextRequest) {
     heroImage5,
     galleryPaintingsDescription,
     galleryJewelryDescription,
+    featuredPaintingIds,
   };
 
   try {

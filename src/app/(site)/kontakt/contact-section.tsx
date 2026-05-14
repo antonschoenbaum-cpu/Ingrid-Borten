@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { FacebookIcon, InstagramIcon } from "@/components/social-icons";
-import { Mail } from "lucide-react";
 
 type Props = {
   email: string;
@@ -65,24 +64,23 @@ export function ContactSection({
       <div className="text-center">
         <a
           href={`mailto:${email}`}
-          className="inline-flex items-center gap-3 font-serif text-xl text-ink transition hover:text-sage-deep"
+          className="inline-flex items-center justify-center text-sm text-gray-700 transition hover:text-gray-900"
         >
-          <Mail className="size-5 shrink-0 text-sage-deep" strokeWidth={1.5} />
           {email}
         </a>
       </div>
 
       {safeFacebookUrl || safeInstagramUrl ? (
-        <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-center">
+        <div className="flex justify-center gap-4">
           {safeFacebookUrl ? (
             <a
               href={safeFacebookUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm uppercase tracking-widest text-ink-muted transition hover:text-ink"
+              className="text-gray-700 transition hover:text-gray-900"
+              aria-label={`${artistName} på Facebook`}
             >
-              <FacebookIcon className="size-5" />
-              {artistName} på Facebook
+              <FacebookIcon className="h-6 w-6 fill-current" />
             </a>
           ) : null}
           {safeInstagramUrl ? (
@@ -90,10 +88,10 @@ export function ContactSection({
               href={safeInstagramUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm uppercase tracking-widest text-ink-muted transition hover:text-ink"
+              className="text-gray-700 transition hover:text-gray-900"
+              aria-label={`${artistName} på Instagram`}
             >
-              <InstagramIcon className="size-5" />
-              {artistName} på Instagram
+              <InstagramIcon className="h-6 w-6 fill-current" />
             </a>
           ) : null}
         </div>
