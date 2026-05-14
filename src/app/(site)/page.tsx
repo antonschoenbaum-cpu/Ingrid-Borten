@@ -87,7 +87,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <FadeInSection delay={0.04}>
             <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-              <h2 className="font-heading text-3xl leading-tight text-gray-900 md:text-5xl">
+              <h2 className="font-heading text-4xl leading-tight text-gray-900 md:text-5xl">
                 Seneste malerier
               </h2>
               <Link
@@ -112,7 +112,7 @@ export default async function HomePage() {
         <div className="mx-auto max-w-7xl px-6 md:px-12">
           <FadeInSection delay={0.06}>
             <div className="mb-10 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-              <h2 className="font-heading text-3xl leading-tight text-gray-900 md:text-5xl">
+              <h2 className="font-heading text-4xl leading-tight text-gray-900 md:text-5xl">
                 Seneste smykker
               </h2>
               <Link

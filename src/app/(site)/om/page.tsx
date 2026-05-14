@@ -77,8 +77,8 @@ export default async function OmPage() {
 
         <FadeInSection delay={0.05}>
           <section id="biografi" className="scroll-mt-36 py-16">
-            <div className="grid gap-12 md:grid-cols-5 md:items-start md:gap-16">
-              {hasPortrait ? (
+            {hasPortrait ? (
+              <div className="grid gap-12 md:grid-cols-5 md:items-start md:gap-16">
                 <div
                   id="portraet"
                   className="order-1 scroll-mt-36 md:order-2 md:col-span-2 md:col-start-4"
@@ -92,18 +92,21 @@ export default async function OmPage() {
                     />
                   </div>
                 </div>
-              ) : null}
-              <div
-                className={`order-2 max-w-2xl space-y-6 font-body text-base leading-relaxed text-gray-800 md:order-1 md:col-span-3 ${
-                  hasPortrait ? "" : "md:col-span-5"
-                }`}
-              >
+                <div className="order-2 max-w-2xl space-y-6 font-body text-base leading-relaxed text-gray-800 md:order-1 md:col-span-3">
+                  {about.heroDescription?.trim() ? (
+                    <p className="whitespace-pre-wrap text-gray-800">{about.heroDescription}</p>
+                  ) : null}
+                  <p className="whitespace-pre-wrap text-gray-800">{about.biography}</p>
+                </div>
+              </div>
+            ) : (
+              <div className="mx-auto max-w-3xl space-y-6 text-center font-body text-base leading-relaxed text-gray-800">
                 {about.heroDescription?.trim() ? (
                   <p className="whitespace-pre-wrap text-gray-800">{about.heroDescription}</p>
                 ) : null}
                 <p className="whitespace-pre-wrap text-gray-800">{about.biography}</p>
               </div>
-            </div>
+            )}
           </section>
         </FadeInSection>
 

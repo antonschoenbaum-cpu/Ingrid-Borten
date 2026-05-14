@@ -34,11 +34,14 @@ export function Footer({
   const year = new Date().getFullYear();
   const hasFacebook = facebookUrl.length > 0;
   const hasInstagram = instagramUrl.length > 0;
+  const showSocialColumn = hasFacebook || hasInstagram;
 
   return (
     <footer className="mt-auto border-t border-gray-200/50 bg-[#FAFAF7] py-16 md:py-20">
       <div className="mx-auto max-w-7xl px-6 md:px-12">
-        <div className="grid gap-12 md:grid-cols-3">
+        <div
+          className={`grid gap-12 ${showSocialColumn ? "md:grid-cols-3" : "md:grid-cols-2"}`}
+        >
           <div>
             <p className="mb-3 font-heading text-xl text-gray-900">{artistName}</p>
             <p className="text-sm italic text-gray-600">Malerier · Smykker · Nordisk ro</p>
@@ -57,9 +60,9 @@ export function Footer({
               </a>
             ) : null}
           </div>
-          <div>
-            <p className="mb-4 text-xs uppercase tracking-[0.2em] text-gray-500">Følg med</p>
-            {hasFacebook || hasInstagram ? (
+          {showSocialColumn ? (
+            <div>
+              <p className="mb-4 text-xs uppercase tracking-[0.2em] text-gray-500">Følg med</p>
               <div className="flex gap-4">
                 {hasFacebook ? (
                   <a
@@ -84,10 +87,8 @@ export function Footer({
                   </a>
                 ) : null}
               </div>
-            ) : (
-              <p className="text-sm text-gray-500">Links tilføjes fra admin under Kontakt.</p>
-            )}
-          </div>
+            </div>
+          ) : null}
         </div>
 
         <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-gray-200/50 pt-8 text-xs text-gray-500 md:flex-row md:items-center">

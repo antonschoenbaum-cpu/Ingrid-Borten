@@ -13,12 +13,12 @@ export function FeaturedWork({ painting }: Props) {
   const desc = painting.description?.trim();
 
   return (
-    <section className="py-24 md:py-32">
-      <div className="mx-auto max-w-7xl px-6 md:px-12">
-        <div className="grid gap-12 md:grid-cols-2 md:items-center md:gap-20">
+    <section className="flex min-h-[80vh] flex-col justify-center py-32 md:py-40">
+      <div className="mx-auto w-full max-w-7xl px-6 md:px-12">
+        <div className="grid gap-16 md:grid-cols-2 md:items-center md:gap-24">
           <Link
             href={`/malerier/${painting.id}`}
-            className="group relative block shadow-[0_8px_32px_rgba(0,0,0,0.08)]"
+            className="group relative mx-auto block w-full max-w-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] md:mx-0"
           >
             <ArtworkImage
               src={painting.image}
