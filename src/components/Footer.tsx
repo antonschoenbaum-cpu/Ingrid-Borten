@@ -2,8 +2,6 @@ import Link from "next/link";
 
 export type FooterProps = {
   artistName: string;
-  atelierAddress: string;
-  email: string;
   facebookUrl: string;
   instagramUrl: string;
 };
@@ -24,41 +22,29 @@ function InstagramIcon({ className }: { className?: string }) {
   );
 }
 
-export function Footer({
-  artistName,
-  atelierAddress,
-  email,
-  facebookUrl,
-  instagramUrl,
-}: FooterProps) {
+export function Footer({ artistName, facebookUrl, instagramUrl }: FooterProps) {
   const year = new Date().getFullYear();
   const hasFacebook = facebookUrl.length > 0;
   const hasInstagram = instagramUrl.length > 0;
   const showSocialColumn = hasFacebook || hasInstagram;
 
+  const mdCols = showSocialColumn ? "md:grid-cols-3" : "md:grid-cols-2";
+
   return (
     <footer className="mt-auto border-t border-gray-200/50 bg-[#FAFAF7] py-16 md:py-20">
       <div className="mx-auto max-w-7xl px-6 md:px-12">
-        <div
-          className={`grid gap-12 ${showSocialColumn ? "md:grid-cols-3" : "md:grid-cols-2"}`}
-        >
+        <div className={`grid gap-12 ${mdCols}`}>
           <div>
             <p className="mb-3 font-heading text-xl text-gray-900">{artistName}</p>
             <p className="text-sm italic text-gray-600">Malerier · Smykker · Nordisk ro</p>
           </div>
-          <div>
-            <p className="mb-4 text-xs uppercase tracking-[0.2em] text-gray-500">Atelier</p>
-            <p className="whitespace-pre-line text-sm leading-relaxed text-gray-700">
-              {atelierAddress}
-            </p>
-            {email ? (
-              <a
-                href={`mailto:${email}`}
-                className="mt-3 block text-sm text-gray-700 transition hover:opacity-60"
-              >
-                {email}
-              </a>
-            ) : null}
+          <div className="flex items-start md:items-center">
+            <Link
+              href="/kontakt"
+              className="font-heading text-lg text-gray-900 transition hover:opacity-70"
+            >
+              Kontakt
+            </Link>
           </div>
           {showSocialColumn ? (
             <div>
@@ -91,14 +77,8 @@ export function Footer({
           ) : null}
         </div>
 
-        <div className="mt-12 flex flex-col items-start justify-between gap-4 border-t border-gray-200/50 pt-8 text-xs text-gray-500 md:flex-row md:items-center">
+        <div className="mt-12 border-t border-gray-200/50 pt-8 text-xs text-gray-500">
           <p>© {artistName} {year}</p>
-          <Link
-            href="/kontakt"
-            className="text-xs uppercase tracking-[0.15em] text-gray-500 transition hover:text-gray-800"
-          >
-            Kontakt
-          </Link>
         </div>
       </div>
     </footer>
