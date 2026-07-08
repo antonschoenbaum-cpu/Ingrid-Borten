@@ -1,0 +1,36 @@
+name: Keep Supabase alive
+
+# Uafhængig backup-heartbeat, så Supabase-gratisprojektet aldrig pauses
+# efter 7 dages inaktivitet. Kører selv hvis Vercel-deployen skulle fejle,
+# fordi den rammer Supabase REST API direkte.
+
+on:
+  schedule:
+    # Mandag og torsdag kl. 06:00 UTC (godt inden for 7-dages vinduet).
+    - cron: "0 6 * * 1,4"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Mangler SUPABASE_URL eller SUPABASE_ANON_KEY secret."
+            exit 1
+          fi
+          status=$(curl -sS -o /dev/null -w "%{http_code}" \
+            --retry 5 --retry-delay 10 --retry-all-errors --max-time 30 \
+            "${SUPABASE_URL%/}/rest/v1/paintings?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+          echo "HTTP status: $status"
+          if [ "$status" != "200" ] && [ "$status" != "206" ]; then
+            echo "Keep-alive fejlede med status $status"
+            exit 1
+          fi
+          echo "Supabase er aktiv."
